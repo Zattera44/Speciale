@@ -12,13 +12,22 @@ double f(double x)
 
 int main()
 {
-    double a, b, n;
+    std::vector<std::vector<double>> A = { {2 , 1 ,1}, {1,2,1},{1,1,2}};
+    std::vector<std::vector<double>> B(3, std::vector<double>(3, 1));
+    
+    std::cout << "A" << std::endl;
+    
+    printMatrix(A);
+    
 
-    a = 0;
-    b = 4;
-    n = 1000;
+    std::cout << "L" << std::endl;
 
-    std::cout << trapezoid(f, a, b, n) << std::endl;
+    B = cholesky(A);
 
-    std::cout << "Hello World!\n";
+    printMatrix(B);
+
+
+    std::cout << std::endl << "L L^T" << std::endl;;
+
+    printMatrix(squareMult(B,transpose(B)));
 }
