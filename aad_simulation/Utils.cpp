@@ -1,11 +1,11 @@
 #include "Utils.h"
 #include <iostream>
 
-void printMatrix(std::vector<std::vector<double>> M)
+void printMatrix(const std::vector<std::vector<double>>& M)
 {
-	for (int i = 0; i < M.size(); i++)
+	for (size_t i = 0; i < M.size(); i++)
 	{
-		for (int j = 0; j < M[i].size(); j++)
+		for (size_t j = 0; j < M[i].size(); j++)
 		{
 			std::cout << M[i][j];
 		
@@ -16,6 +16,15 @@ void printMatrix(std::vector<std::vector<double>> M)
 	}
 }
 
+
+void printVector(const std::vector<double>& m)
+{
+	std::cout << std::endl;
+	for (size_t i = 0; i < m.size(); i++)
+	{
+		std::cout << m[i] << std::endl;
+	}
+}
 
 // Numerical integration using the trapezoid rule
 double trapezoid(double (*func)(double), double a, double b, int n)
@@ -44,13 +53,13 @@ double trapezoid(double (*func)(double), double a, double b, int n)
 
 
 //Returns the transpose of a matrix A
-std::vector<std::vector<double>> transpose(std::vector<std::vector<double>> A)
+std::vector<std::vector<double>> transpose(const std::vector<std::vector<double>>& A)
 {
 	std::vector<std::vector<double>> ATrans(A.size(), std::vector<double>(A[0].size(), 0));
 
-	for (int i = 0; i < A.size(); i++)
+	for (size_t i = 0; i < A.size(); i++)
 	{
-		for (int j = 0; j < A[0].size(); j++)
+		for (size_t j = 0; j < A[0].size(); j++)
 		{
 			ATrans[i][j] = A[j][i];
 		}
@@ -61,15 +70,15 @@ std::vector<std::vector<double>> transpose(std::vector<std::vector<double>> A)
 
 
 //Returns the product of two matrices A and B
-std::vector<std::vector<double>> squareMult(std::vector<std::vector<double>> A
-	, std::vector<std::vector<double>> B)
+std::vector<std::vector<double>> matrixMult(const std::vector<std::vector<double>>& A
+	, const std::vector<std::vector<double>>& B)
 {
-	std::vector<std::vector<double>> C(A.size(), std::vector<double>(A[0].size(), 0));
+	std::vector<std::vector<double>> C(A.size(), std::vector<double>(B[0].size(), 0));
 
 
-	for (int i = 0; i < C.size(); i++)
+	for (size_t i = 0; i < C.size(); i++)
 	{
-		for (int j = 0; j < C[i].size(); j++)
+		for (size_t j = 0; j < C[i].size(); j++)
 		{
 			double sum = 0;
 			for (int k = 0; k < A[i].size(); k++)
@@ -83,19 +92,41 @@ std::vector<std::vector<double>> squareMult(std::vector<std::vector<double>> A
 }
 
 
+//returns the result of A*a
+std::vector<double> vectorMult(const std::vector<std::vector<double>>& A, const std::vector<double>& a)
+{
+	std::vector<double> res(A[0].size(), 0);
+	float sum;
+
+
+	for (size_t i = 0; i < res.size(); i++)
+	{
+		sum = 0;
+		for (size_t k = 0; k < res.size(); k++)
+		{
+			sum += a[k] * A[i][k];
+		}
+		res[i] = sum;
+		sum = 0;
+	}
+	return res;
+}
+
+
+
 
 //Returns the Cholesky decomposition of a positive definite matrix
-std::vector<std::vector<double>> cholesky(std::vector<std::vector<double>> A)
+std::vector<std::vector<double>> cholesky(const std::vector<std::vector<double>>& A)
 {
 	std::vector<std::vector<double>> L(A.size(), std::vector<double>(A[0].size(),0));
-	for (int i = 0; i < L.size(); i++)
+	for (size_t i = 0; i < L.size(); i++)
 	{
-		for (int j = 0; j <= i ; j++)
+		for (size_t j = 0; j <= i ; j++)
 		{
 			double sum = 0;
 			if (i == j)
 			{
-				for (int k = 0; k < j; k++)
+				for (size_t k = 0; k < j; k++)
 				{
 					sum += pow(L[j][k], 2);
 				}
@@ -103,7 +134,7 @@ std::vector<std::vector<double>> cholesky(std::vector<std::vector<double>> A)
 			}
 			else
 			{
-				for (int k = 0; k < j; k++)
+				for (size_t k = 0; k < j; k++)
 				{
 					sum += L[i][k] * L[j][k];
 				}
