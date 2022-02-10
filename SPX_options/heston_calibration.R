@@ -87,7 +87,7 @@ impVol <- function(price,S,K,r,TTM){
 
 ### Options on Google, provided for assignment in Financial Engineering @ CBS ###
 
-data <- read_delim('data/GOOGLData.csv', delim = ";")
+data <- read_delim('/Users/tk/Documents/GitHub/Speciale/data/GOOGLData.csv', delim = ";")
 
 l <- length(data$Price)
 
