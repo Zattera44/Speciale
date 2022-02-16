@@ -6,44 +6,68 @@
 
 #include "Utils.h"
 #include "Simulation.h"
+#include "Node.h"
 
 
 
-
-double f(double x)
+template <class T>
+double f(T x)
 {
-    return pow(x, 2);
+    Number exp1 = x * x;
+    Number exp2 = log(x);
+    Number res = exp1 + exp2;
+    double res2;
+
+    res2 = res.evaluate();
+    res.setOrder();
+    res.logResults();
+
+    return res2;
 }
 
 
 int main()
 {
-    std::vector<std::vector<double>> A;
-    int n;
-    double H;
-    double T;
+ ///*   std::vector<std::vector<double>> A;
+ //   int n;
+ //   double H;
+ //   double T;
 
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::normal_distribution<double> norm(0, 1);
+ //   std::random_device rd;
+ //   std::mt19937 mt(rd());
+ //   std::normal_distribution<double> norm(0, 1);
 
-    H = 0.12;
-    n = 1000;
-    T = 10;
+ //   H = 0.12;
+ //   n = 1000;
+ //   T = 10;
 
-    A = covMatrix(H, T, n);
+ //   A = covMatrix(H, T, n);
 
-    A = cholesky(A);
+ //   A = cholesky(A);
+ //   
+ //   std::vector<double> gaussian(1000, 0);
+
+ //   for (size_t i = 0; i < gaussian.size(); i++)
+ //   {
+ //       gaussian[i] = norm(mt);
+ //   }
+
+
+ //   gaussian = vectorMult(A, gaussian);
+
+ //   printVector(gaussian);*/
+
+
+    Number a(5);
+    Number b = 2;
     
-    std::vector<double> gaussian(1000, 0);
+    double x;
 
-    for (size_t i = 0; i < gaussian.size(); i++)
-    {
-        gaussian[i] = norm(mt);
-    }
+    x = f(a);
 
 
-    gaussian = vectorMult(A, gaussian);
+    std::cout << "test";
 
-    printVector(gaussian);
+
+
 }

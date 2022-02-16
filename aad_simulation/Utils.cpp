@@ -96,7 +96,7 @@ std::vector<std::vector<double>> matrixMult(const std::vector<std::vector<double
 std::vector<double> vectorMult(const std::vector<std::vector<double>>& A, const std::vector<double>& a)
 {
 	std::vector<double> res(A[0].size(), 0);
-	float sum;
+	double sum;
 
 
 	for (size_t i = 0; i < res.size(); i++)
