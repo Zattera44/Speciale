@@ -103,13 +103,13 @@ for(i in 1:l){
 
 ### Plotting IV ###
 
-jpeg('google_IV.jpg', width = 1920, height = 1080, res = 300)
+#jpeg('google_IV.jpg', width = 1920, height = 1080, res = 300)
 
 impVolPlot <- ggplot(data = data , mapping = aes(log(Strike/S0), impliedVolatility)) + 
   geom_line(aes(colour = factor(Expiry))) + xlab('log(K/S)') + ylab('Implied volatility') +
   labs(colour = "Expiry (in days)"); impVolPlot
 
-dev.off()
+#dev.off()
 
 ### Delta and Vega ###
 
