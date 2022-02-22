@@ -87,18 +87,19 @@ impVol <- function(price,S,K,r,TTM){
 
 ### Options on Google, provided for assignment in Financial Engineering @ CBS ###
 
-data <- read_delim('/Users/tk/Documents/GitHub/Speciale/data/GOOGLData.csv', delim = ";")
+data <- read_delim('/Users/tk/Documents/GitHub/Speciale/data/SPXData.csv', delim = ";")
 
 l <- length(data$Price)
 
 # Spot is(/was) equal to 2786, assume risk free rate of zero
 
-S0 <- 2786; r <- 0
+S0 <- 4523; r <- 0
+
 
 ### Calculating IV ###
 
 for(i in 1:l){
-  data[i,'impliedVolatility'] <- impVol(data[[i,1]],S0,data[[i,2]],r,data[[i,3]]/365)
+  data[i,'impliedVolatility'] <- impVol(data[[i,1]],S0,data[[i,2]],r,data[[i,3]])
 }
 
 ### Plotting IV ###
@@ -114,8 +115,8 @@ impVolPlot <- ggplot(data = data , mapping = aes(log(Strike/S0), impliedVolatili
 ### Delta and Vega ###
 
 for(i in 1:l){
-  data[i, 'delta'] <- BSMDelta(S0,data[[i,2]],r,data[[i,4]],data[[i,3]]/365)
-  data[i, 'vega'] <- BSMVega(S0,data[[i,2]],r,data[[i,4]],data[[i,3]]/365) / 100
+  data[i, 'delta'] <- BSMDelta(S0,data[[i,2]],r,data[[i,4]],data[[i,3]])
+  data[i, 'vega'] <- BSMVega(S0,data[[i,2]],r,data[[i,4]],data[[i,3]]) / 100
 }
 
 deltaPlot <- ggplot(data = data , mapping = aes(log(Strike/S0), delta)) + 
@@ -132,7 +133,7 @@ vegaPlot <- ggplot(data = data , mapping = aes(log(Strike/S0), vega)) +
 lossFunction <- function(parms){
   sum <- 0
   for(i in 1:l){
-    sum <- sum + ( (data[[i,1]] - HestonCall(S0,data[[i,2]],0,0,data[[i,3]]/365,parms[1],parms[2],parms[3],parms[4],parms[5])) / (data[[i,6]] * 100) )^2
+    sum <- sum + ( (data[[i,1]] - HestonCall(S0,data[[i,2]],0,0,data[[i,3]],parms[1],parms[2],parms[3],parms[4],parms[5])) / (data[[i,6]] * 100) )^2
   }
   return(sum)
 }
@@ -152,8 +153,8 @@ rho <- -0.3
 ### Calculating and plotting implied volatility of prices calculated with calibrated Heston model ###
 
 for(i in 1:l){
-  HestonPrice <- HestonCall(S0,data[[i,2]],0,0,data[[i,3]]/365,v,sigma,kappa,theta,rho)
-  data[i,'HestonImp'] <- impVol(HestonPrice,S0,data[[i,2]],r,data[[i,3]]/365)
+  HestonPrice <- HestonCall(S0,data[[i,2]],0,0,data[[i,3]],v,sigma,kappa,theta,rho)
+  data[i,'HestonImp'] <- impVol(HestonPrice,S0,data[[i,2]],r,data[[i,3]])
 }
 
 impVolPlot2 <- ggplot(data = data , mapping = aes(log(Strike/S0), impliedVolatility)) + 
