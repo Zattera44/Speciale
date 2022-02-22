@@ -11,18 +11,14 @@
 
 
 template <class T>
-double f(T x)
+T f(T x)
 {
-    Number exp1 = x * x;
-    Number exp2 = log(x);
-    Number res = exp1 + exp2;
-    double res2;
+    
+    Number exp1 = x * x + log(x);
 
-    res2 = res.evaluate();
-    res.setOrder();
-    res.logResults();
+    exp1.propogateAdjoints();
 
-    return res2;
+    return exp1;
 }
 
 
@@ -59,14 +55,12 @@ int main()
 
 
     Number a(5);
-    Number b = 2;
     
-    double x;
 
-    x = f(a);
+    Number b = f(a);
 
 
-    std::cout << "test";
+    std::cout << b.getNode()->result();
 
 
 

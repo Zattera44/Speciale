@@ -5,14 +5,12 @@
 class Node
 {
 protected:
-	std::vector<std::shared_ptr<Node>> myArguments;
-	bool isVisited = false;
-	unsigned myOrder = 0;
+	std::vector<Node*> myArguments;
+
 	double myAdjoint = 0.0;
 	double myResult;
 public:
 	virtual ~Node() {}
-	virtual void evaluate() = 0;
 	virtual void propogateAdjoint() = 0;
 
 	double& adjoint()
@@ -31,38 +29,9 @@ public:
 	}
 
 
-	void setOrder(unsigned order)
-	{
-		myOrder = order;
-	}
-
-	unsigned order()
-	{
-		return myOrder;
-	}
-
-	template <class V>
-	void postorder(V visitFunc)
-	{
-		if (!isVisited)
-		{
-			for (auto argument : myArguments)
-				argument->postorder(visitFunc);
-			visitFunc(*this);
-			isVisited = true;
-	}
-	}
-
 	double result()
 	{
 		return myResult;
-	}
-
-
-	void resetProcessed()
-	{
-		for (auto argument : myArguments) argument->resetProcessed();
-		isVisited = false;
 	}
 
 };
@@ -75,24 +44,17 @@ class PlusNode : public Node
 {
 
 public:
-	PlusNode(std::shared_ptr<Node> lhs, std::shared_ptr<Node> rhs)
+	PlusNode(Node* lhs, Node* rhs)
 	{
 		myArguments.resize(2);
 		myArguments[0] = lhs;
 		myArguments[1] = rhs;
+
+		myResult = lhs->result() + rhs->result();
 	}
-
-
-	void evaluate() override
-	{
-		myResult = myArguments[0]->result() + myArguments[1]->result();
-	}
-
 
 	void propogateAdjoint() override
 	{
-		std::cout << "Propagating node" << myOrder
-			<< "adjoint = " << myAdjoint << std::endl;
 		myArguments[0]->adjoint() += myAdjoint;
 		myArguments[1]->adjoint() += myAdjoint;
 	}
@@ -104,47 +66,36 @@ class TimesNode : public Node
 {
 public:
 
-	TimesNode(std::shared_ptr<Node> lhs, std::shared_ptr<Node> rhs)
+	TimesNode(Node* lhs, Node* rhs)
 	{
 		myArguments.resize(2);
 		myArguments[0] = lhs;
 		myArguments[1] = rhs;
+
+		myResult = lhs->result() * rhs->result();
 	}
 
-
-	void evaluate() override
-	{
-		myResult = myArguments[0]->result() * myArguments[1]->result();
-	}
 
 	void propogateAdjoint() override
 	{
-		std::cout << "Propagating node " << myOrder
-			<< " adjoint = " << myAdjoint << std::endl;
 		myArguments[0]->adjoint() += myAdjoint * myArguments[1]->result();
 		myArguments[1]->adjoint() += myAdjoint * myArguments[0]->result();
 	}
-
 };
 
 class LogNode : public Node
 {
 public:
-	LogNode(std::shared_ptr<Node> arg)
+	LogNode(Node* arg)
 	{
 		myArguments.resize(1);
 		myArguments[0] = arg;
-	}
 
-	void evaluate() override
-	{
-		myResult = log(myArguments[0]->result());
+		myResult = log(arg->result());
 	}
 
 	void propogateAdjoint() override
 	{
-		std::cout << "Propagating node " << myOrder
-			<< " adjoint = " << myAdjoint << std::endl;
 		myArguments[0]->adjoint() += myAdjoint / myArguments[0]->result();
 	}
 
@@ -154,7 +105,10 @@ public:
 class Leaf : public Node
 {
 public:
-	Leaf(double val) : myValue(val) {}
+	Leaf(double val) 
+	{
+		myResult = val;
+	}
 
 	double getVal()
 	{
@@ -173,11 +127,7 @@ public:
 	}
 
 
-	void propogateAdjoint() override
-	{
-		std::cout << "Accumulating leaf" << myOrder
-			<< " adjoint = " << myAdjoint << std::endl;
-	}
+	void propogateAdjoint() override { }
 
 
 private:
@@ -188,57 +138,34 @@ private:
 class Number
 {
 
-	std::shared_ptr<Node> myNode;
+	Node* myNode;
 
 public:
+	//tape
+	static std::vector<std::unique_ptr<Node>> tape;
 
-	Number(double val) : myNode(new Leaf(val)) {}
-	Number(std::shared_ptr<Node> node) : myNode(node) {}
+	Number(double val) : myNode(new Leaf(val))
+	{
+		tape.push_back(std::unique_ptr<Node>(myNode));
+	}
 
-	std::shared_ptr<Node> getNode()
+	Number(Node* node) : myNode(node) {}
+
+	Node* getNode()
 	{
 		return myNode;
 	}
 
 	void setVal(double val)
 	{
-		std::dynamic_pointer_cast<Leaf>(myNode)->setVal(val);
+		dynamic_cast<Leaf*>(myNode)->setVal(val);
 	}
 	
 	double getVal()
 	{
-		return std::dynamic_pointer_cast<Leaf>(myNode)->getVal();
+		return dynamic_cast<Leaf*>(myNode)->getVal();
 	}
 
-	double evaluate()
-	{
-		myNode->resetProcessed();
-		myNode->postorder([] (Node& n) { n.evaluate() ; } );
-		return myNode->result();
-	}
-
-
-	void setOrder()
-	{
-		myNode->resetProcessed();
-		unsigned order = 0;
-		myNode->postorder(
-			[&order](Node& n) mutable { n.setOrder(++order);
-			 }
-		);
-	}
-
-	void logResults()
-	{
-		myNode->resetProcessed();
-		myNode->postorder([](Node& n) {
-			std::cout << "Processed node "
-				<< n.order() << " result = "
-				<< n.result() << std::endl;
-			; }
-
-		);
-	}
 
 	double& adjoint()
 	{
@@ -249,25 +176,53 @@ public:
 	{
 		myNode->resetAdjoints();
 		myNode->adjoint() = 1.0;
+
+		auto it = tape.rbegin();
+		while (it->get() != myNode)
+		{
+			++it;
+		}
+
+		while (it != tape.rend())
+		{
+			(*it)->propogateAdjoint();
+			++it;
+		}
 	}
-
-
-
 };
 
-std::shared_ptr<Node> operator+(Number lhs, Number rhs)
+
+std::vector<std::unique_ptr<Node>> Number::tape;
+
+
+//Operator overriding
+
+Number operator+(Number lhs, Number rhs)
 {
-	return std::shared_ptr<Node>(new PlusNode(lhs.getNode(), rhs.getNode()));
+	Node* n = new PlusNode(lhs.getNode(), rhs.getNode());
+
+	Number::tape.push_back(std::unique_ptr<Node>(n));
+
+	return n;
 }
 
 
-std::shared_ptr<Node> operator*(Number lhs, Number rhs)
+Number operator*(Number lhs, Number rhs)
 {
-	return std::shared_ptr<Node>(new TimesNode(lhs.getNode(), rhs.getNode()));
+
+	Node* n = new TimesNode(lhs.getNode(), rhs.getNode());
+
+	Number::tape.push_back(std::unique_ptr<Node>(n));
+
+	return n;
 }
 
-std::shared_ptr<Node> log(Number arg)
+Number log(Number arg)
 {
-	return std::shared_ptr<Node>(new LogNode(arg.getNode()));
+	Node* n = new LogNode(arg.getNode());
+	
+	Number::tape.push_back(std::unique_ptr<Node>(n));
+	
+	return n;
 }
 
