@@ -59,7 +59,6 @@ data <- merged
 
 S0 <- getQuote('^SPX')$Last; r <- 0
 
-#merged$Expiry <- merged$Expiry/365
 data$Price <- (data$Bid+data$Ask)/2
 data$Moneyness <- log(data$Strike/S0)
 data <- data[abs(data$Moneyness) < 0.7,]
@@ -71,16 +70,18 @@ l <- length(data$Price)
 
 for(i in 1:l){
   data[i, 'impVol'] <- impVol(data$Price[i], data$Strike[i], data$Expiry[i]/365, S0, r)
+  print(i)
 }  
 
 merged <- merged[!(is.na(data$impVol)),]
 
+nits <- 0
 errors = TRUE
 while(errors){
+  print(nits)
   len <- 0
-  k = 1
   for(expiry in unique(data$Expiry)){
-
+    k = 1
     remove <- vector()
 
     for(i in 2:(length(data[data$Expiry==expiry, 'impVol'])-1)){
@@ -97,6 +98,7 @@ while(errors){
     errors <- FALSE
   }
   data <- data[!(is.na(merged$impVol)),]
+  nits <- nits + 1
 }
 
 impVolPlot <- ggplot(data = data , mapping = aes(Moneyness, impVol)) + 
