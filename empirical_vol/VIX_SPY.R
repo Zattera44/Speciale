@@ -1,9 +1,10 @@
 library(moments)
+library(forecast)
 
-spy <- read.csv2('data/SPY.csv', sep = ',')
-longspy <- read.csv2('data/longSPY.csv', sep = ',')
-vix <- read.csv2('data/VIX.csv', sep = ',')
-longvix <- read.csv2('data/longVIX.csv', sep = ',')
+spy <- read.csv2('/Users/tk/Documents/GitHub/Speciale/data/SPY.csv', sep = ',')
+longspy <- read.csv2('/Users/tk/Documents/GitHub/Speciale/data/longSPY.csv', sep = ',')
+vix <- read.csv2('/Users/tk/Documents/GitHub/Speciale/data/VIX.csv', sep = ',')
+longvix <- read.csv2('/Users/tk/Documents/GitHub/Speciale/data/longVIX.csv', sep = ',')
 
 spy <- spy[c('Date','Adj.Close')]
 longspy <- longspy[c('Date','Adj.Close')]
@@ -42,16 +43,20 @@ kurtosis(logSpy); kurtosis(sim)
 longdiff <- diff(log(longvix$Adj.Close))
 sim2 <- rnorm(n = length(longdiff), mean = mean(longdiff), sd = sd(longdiff))
 
-jpeg('vix_hist.jpg', width = 1920, height = 1080, res = 300)
+#jpeg('vix_hist.jpg', width = 1920, height = 1080, res = 300)
 hist(longdiff, breaks = 100, freq = FALSE, col = 'green',
      xlab = 'ln(VIX_t) - ln(VIX_t-1)', main = '')
 lines(density(sim2), col = 'red', lwd = 2)
-dev.off()
+#dev.off()
 
 #jpeg('vix_diff.jpg', width = 1920, height = 1080, res = 300)
 plot(longdiff~as.Date(longvix$Date)[-1], type = 'l', col = 'green',
      xlab = '', ylab='ln(VIX_t) - ln(VIX_t-1)')
 #dev.off()
+
+jpeg('acf_vix.jpg', width = 1920, height = 1080, res = 300)
+Acf(longdiff, lag.max = 10, main="")
+dev.off()
 
 skewness(longdiff); skewness(sim2)
 kurtosis(longdiff); kurtosis(sim2)

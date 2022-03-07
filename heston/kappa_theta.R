@@ -41,15 +41,16 @@ kHvL <- rowMeans(t(sim2))
 kLvH <- rowMeans(t(sim3))
 kHvH <- rowMeans(t(sim4))
 
+jpeg('kappa_theta.jpg', width = 1920, height = 1080, res = 300)
 plot(kLvL, ylim=c(0,0.21), 
      type='l', lty=2, lwd=3, col='blue', 
      ylab = 'Pathwise average volatility', xlab='Day',
-     main = 'Effect of kappa and theta')
-points(kHvL, col='green')
-lines(kLvH, lty=2, lwd=3, col='red')
-points(kHvH, col='pink')
+     main = 'Mean reversion in the Heston model')
+lines(kHvL, col='blue', lwd=3)
+lines(kLvH, lty=2, lwd=3, col='pink')
+lines(kHvH, col='pink', lwd=3)
 abline(0.1, 0, col = 'grey')
-
+dev.off()
 
 
 
