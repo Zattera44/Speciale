@@ -26,15 +26,10 @@ impVol <- function(price,K,TTM,S,r,increment=0.00001,limit=1000){
   return(sigma)
 }
 
-dates <- c('2022-03-02',
-           #'2022-03-21',
-           #'2022-05-20',
-           '2022-04-29',
-           '2022-04-01',
-           '2022-07-29',
-           '2023-01-20')
+dates <- c('2022-03-21',
+           '2023-03-17')
 
-SPX <- getOptionChain('^SPX', dates)
+SPX <- getOptionChain('^SPX', NULL)
 
 expiry_dates <- as.Date(names(SPX), format = '%b.%d.%Y')
 expiry_days <- expiry_dates - Sys.Date()
@@ -47,6 +42,7 @@ for(df in SPX){
         merged$Expiry <- as.numeric(expiry_days[i])
       }
       else{
+        if(is.null(df$calls)) next
         current <- df$calls
         current$Expiry <- as.numeric(expiry_days[i])
         merged <- rbind(merged, current)
@@ -73,7 +69,7 @@ for(i in 1:l){
   print(i)
 }  
 
-merged <- merged[!(is.na(data$impVol)),]
+data <- data[!(is.na(data$impVol)),]
 
 nits <- 0
 errors = TRUE
@@ -97,12 +93,43 @@ while(errors){
   if(len == 0){
     errors <- FALSE
   }
-  data <- data[!(is.na(merged$impVol)),]
+  data <- data[!(is.na(data$impVol)),]
   nits <- nits + 1
 }
 
-impVolPlot <- ggplot(data = data , mapping = aes(Moneyness, impVol)) + 
+maturities <- unique(data$Expiry)
+
+for(mat in maturities){
+plot <- ggplot(data = data[data$Expiry==mat,] , mapping = aes(Moneyness, impVol)) + 
   geom_line(aes(colour = factor(Expiry))) + xlab('log(K/S)') + ylab('Implied volatility') +
-  labs(colour = "Expiry"); impVolPlot
+  labs(colour = "Expiry")
+print(plot)
+}
+
+filtered <- c(6,10,16,17,22,24,30,38,52,66,94,136,157,169,199,220,248,311,339,367,458)
+
+for(mat in filtered){
+  plot <- ggplot(data = data[data$Expiry==mat,] , mapping = aes(Moneyness, impVol)) + 
+    geom_line(aes(colour = factor(Expiry))) + xlab('log(K/S)') + ylab('Implied volatility') +
+    labs(colour = "Expiry")
+  print(plot)
+}
+
+copy <- copy[copy$Expiry %in% filtered,]
+
+plot <- ggplot(data = copy , mapping = aes(Moneyness, impVol)) + 
+  geom_line(aes(colour = factor(Expiry))) + xlab('log(K/S)') + ylab('Implied volatility') +
+  labs(colour = "Expiry"); plot
+
+test <- c(10,17,30,66,94,136,220,339)
+
+copy2 <- copy[copy$Expiry %in% test,]
+
+plot <- ggplot(data = copy2 , mapping = aes(Moneyness, impVol)) + 
+  geom_line(aes(colour = factor(Expiry))) + xlab('log(K/S)') + ylab('Implied volatility') +
+  labs(colour = "Expiry"); plot
+
+
+
 
 

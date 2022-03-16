@@ -52,42 +52,60 @@ BSMVega <- function(S,K,sigma,TTM){
 
 impVol <- function(price,S,K,TTM){
   f <- function(sigma) price - BSM(S,K,sigma,TTM)
-  impVol <- uniroot(f,c(0,1))
+  impVol <- uniroot(f,c(-1,1))
   return(impVol$root)
 }
 
 library(tidyverse)
 
-data <- read_delim('/Users/tk/Desktop/cand.merc.mat/3. semester/FinEng/assignments/GOOGLData.csv', delim = ";")
+data <- read_csv2('/Users/tk/Documents/GitHub/Speciale/data/calibration_data.csv')
 
-l <- length(data$Price); S0 <- 2786
+data <- data[,c("Strike", "Price", "Expiry", "impVol")]
+
+#maturities <- c(10,17,30,66)
+
+#data <- data[data$Expiry %in% maturities,]
+
+l <- length(data$Price); S0 <- 4240
 
 for(i in 1:l){
-  data[i,'impliedVolatility'] <- impVol(data$Price[i],S0,data$Strike[i],data$Expiry[i]/365)
-  data[i,'Vega'] <- BSMVega(S0,data$Strike[i],data$impliedVolatility[i],data$Expiry[i]/365) / 100
+  data[i,'Vega'] <- BSMVega(S0,data$Strike[i],data$impVol[i],data$Expiry[i]/365) / 100
 }
 
-test <- c(0.1, 0.1, 0.1, 0.1, -0.1, 0.1, -0.1, 0.1); lossFunction(test)
+#par <- optim(par = c(0.05, 0.3, 0.5, 0.05, -0.7, 0.1, -0.1, 0.1), lossFunction, method = "L-BFGS-B", lower = c(0.01, 0.01, 0.01, 0.01, -0.99, 0.01, -0.99, 0.01), upper = c(10, 10, 10, 10, 0.99, 10, 0.99, 10))
 
-par <- optim(par = c(0.05, 0.3, 0.5, 0.04, -0.7, 0.1, -0.1, 0.1), lossFunction, method = "L-BFGS-B", lower = c(0.01, 0.01, 0.01, 0.01, -0.99, 0.01, -0.99, 0.01), upper = c(10, 10, 10, 10, 0.99, 10, 0.99, 10))
-
-v <- 0.05398280
-sigma <- 0.32434720
-kappa <- 0.54712954
-theta <- 0.03193677
-rho <- -0.30885994
-lambda <- 0.10713010
-mu <- -0.31099843
-delta <- 0.48499653
+v <- 0.06809358
+sigma <- 0.65239094
+kappa <- 0.40659087
+theta <- 0.09848509
+rho <- -0.84379886
+lambda <- 0.14531402
+mu <- -0.21302818
+delta <- 0.24271881
 
 for(i in 1:l){
   BatesPrice <- BatesCall(S0,data$Strike[i],data$Expiry[i]/365,v,sigma,kappa,theta,rho,lambda,mu,delta)
+  if(BatesPrice<0){ 
+    next
+  }
+  else{
   data[i,'BatesImp'] <- impVol(BatesPrice,S0,data$Strike[i],data$Expiry[i]/365)
+  }
 }
 
-impVolPlot <- ggplot(data = data , mapping = aes(log(Strike/S0), impliedVolatility)) + 
-  geom_line(aes(x = log(Strike/S0), y = impliedVolatility, colour = factor(Expiry))) + 
+data <- data[!(is.na(data$BatesImp)),]
+
+impVolPlot <- ggplot(data = data , mapping = aes(log(Strike/S0), impVol)) + 
+  geom_line(aes(x = log(Strike/S0), y = impVol, colour = factor(Expiry))) + 
   geom_line(aes(x = log(Strike/S0), y = BatesImp, colour = factor(Expiry)), linetype="dashed") +
   xlab('log(K/S)') + 
   ylab('Implied volatility') + 
+  ggtitle('Calibration result in the Bates model') +
   labs(colour = "Expiry"); impVolPlot
+
+data$error <- abs(data$impVol-data$BatesImp)
+mean(data$error)
+median(data$error)
+sd(data$error)
+hist(data$error,col='blue', xlab='Absolute error', main='Absolute errors in the Bates calibration')
+
