@@ -1,12 +1,9 @@
-// SpecialeSimulation.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <random>
 
 #include "Utils.h"
 #include "Simulation.h"
-#include "Node.h"
+#include "Number.h"
 
 
 
@@ -14,9 +11,13 @@ template <class T>
 T f(T x)
 {
     
-    Number exp1 = x * x + log(x);
+    Number exp1 = 2*x * x + log(x);
 
     exp1.propogateAdjoints();
+
+    std::cout << x.adjoint() << std::endl;
+
+
 
     return exp1;
 }
@@ -55,13 +56,15 @@ int main()
 
 
     Number a(5);
-    
+    Number c(10);
 
-    Number b = f(a);
+    Number b = f(c);
 
+
+    std::cout << b.getNode()->result() << std::endl;
+
+    b = f(a);
 
     std::cout << b.getNode()->result();
-
-
 
 }
