@@ -117,4 +117,35 @@ Number square(Number arg)
 }
 
 
+Number max(Number lhs, Number rhs)
+{
+	Node* n = new MaxNode(lhs.getNode(), rhs.getNode());
+
+	Number::tape.push_back(std::unique_ptr<Node>(n));
+
+	return n;
+}
+
+
+Number CDF(Number arg)
+{
+	Node* n = new NormCDFNode(arg.getNode());
+
+	Number::tape.push_back(std::unique_ptr<Node>(n));
+
+	return n;
+}
+
+
+
+Number operator/(Number lhs, Number rhs)
+{
+	Node* n = new DivisionNode(lhs.getNode(), rhs.getNode());
+
+	Number::tape.push_back(std::unique_ptr<Node>(n));
+
+	return n;
+}
+
+
 std::vector<std::unique_ptr<Node>> Number::tape;

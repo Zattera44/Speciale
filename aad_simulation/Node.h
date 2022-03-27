@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-
+#include "Utils.h"
 
 class Node
 {
@@ -72,6 +72,31 @@ class SquareNode : public Node
 public:
 	SquareNode(Node* arg);
 	 void propogateAdjoint() override;
+};
+
+
+
+class MaxNode : public Node
+{
+public:
+	MaxNode(Node* lhs, Node* rhs);
+	void propogateAdjoint() override;
+};
+
+
+class NormCDFNode : public Node
+{
+public:
+	NormCDFNode(Node* arg);
+	void propogateAdjoint() override;
+};
+
+
+class DivisionNode : public Node
+{
+public:
+	DivisionNode(Node* lhs, Node* rhs);
+	void propogateAdjoint() override;
 };
 
 

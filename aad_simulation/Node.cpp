@@ -107,7 +107,7 @@ ExpNode::ExpNode(Node* arg)
 
 void ExpNode::propogateAdjoint()
 {
-	myArguments[0]->adjoint() += myAdjoint * myArguments[0]->result();
+	myArguments[0]->adjoint() += myAdjoint * exp(myArguments[0]->result());
 }
 
 //SquareRoot Node
@@ -164,4 +164,61 @@ void Leaf:: setVal(double val)
 void Leaf:: evaluate()
 {
 	myResult = myValue;
+}
+
+
+
+//Max Node
+
+MaxNode::MaxNode(Node* lhs, Node* rhs)
+{
+	myArguments.resize(2);
+	myArguments[0] = lhs;
+	myArguments[1] = rhs;
+
+	myResult = (lhs->result() >= rhs->result()) ? lhs->result() : rhs->result();
+}
+
+void MaxNode::propogateAdjoint()
+{
+	myArguments[0]->adjoint() += myAdjoint * (myArguments[0]->result() >= myArguments[1]->result()) ? 1 : 0;
+	myArguments[1]->adjoint() += myAdjoint *  (myArguments[0]->result() < myArguments[1]->result()) ? 1 : 0;
+}
+
+
+
+NormCDFNode :: NormCDFNode(Node* arg)
+{
+	myArguments.resize(1);
+	myArguments[0] = arg;
+
+	myResult = normCDF(arg->result());
+}
+
+
+
+
+void NormCDFNode:: propogateAdjoint()
+{
+	myArguments[0]->adjoint() += myAdjoint * normPDF(myArguments[0]->result());
+}
+
+
+
+DivisionNode :: DivisionNode(Node* lhs, Node* rhs)
+{
+	myArguments.resize(2);
+
+	myArguments[0] = lhs;
+	myArguments[1] = rhs;
+
+	myResult = lhs->result() / rhs->result();
+}
+
+
+
+void DivisionNode::  propogateAdjoint()
+{
+	myArguments[0]->adjoint() += myAdjoint / myArguments[1]->result();
+	myArguments[1]->adjoint() += -1 * myAdjoint * myArguments[0]->result() / pow(myArguments[1]->result(),2) ; 
 }

@@ -8,6 +8,12 @@ public:
 	//tape
 	static std::vector<std::unique_ptr<Node>> tape;
 
+
+	inline void resetTape()
+	{
+		tape.clear();
+	}
+
 	inline Number(double val) : myNode(new Leaf(val))
 	{
 		tape.push_back(std::unique_ptr<Node>(myNode));
@@ -32,8 +38,12 @@ public:
 Number operator+(Number lhs, Number rhs);
 Number operator-(Number lhs, Number rhs);
 Number operator*(Number lhs, Number rhs);
+Number operator/(Number lhs, Number rhs);
+
 
 Number log(Number arg);
 Number exp(Number arg);
 Number sqrt(Number arg);
 Number square(Number arg);
+Number max(Number lhs, Number rhs);
+Number CDF(Number arg);
