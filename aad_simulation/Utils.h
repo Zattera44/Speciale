@@ -12,3 +12,7 @@ std::vector<double> vectorMult(const std::vector<std::vector<double>>& A, const 
 
 void printMatrix(const std::vector<std::vector<double>>& M);
 void printVector(const std::vector<double>& m);
+
+
+double normCDF(double x);
+double normPDF(double x);
