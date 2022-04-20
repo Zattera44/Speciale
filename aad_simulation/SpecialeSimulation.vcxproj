@@ -141,10 +141,15 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Number.cpp" />
+    <ClCompile Include="Simulation.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Model.h" />
+    <ClInclude Include="Node.h" />
+    <ClInclude Include="Number.h" />
     <ClInclude Include="Payoff.h" />
     <ClInclude Include="Simulation.h" />
     <ClInclude Include="Utils.h" />
