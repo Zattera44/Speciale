@@ -18,7 +18,7 @@ std::vector<double> BSSim(double spot, double strike, double r, double sigma, do
 std::vector<double> BSFormula(double spot, double strike, double r, double sigma, double T);
 
 
-
+double BSCall(double spot, double strike, double r, double sigma, double T);
 
 std::vector<double> rBergomiCall(double H, double xi, double eta, double spot, double v0, double T, int numSteps );
 

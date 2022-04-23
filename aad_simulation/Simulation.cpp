@@ -48,6 +48,32 @@ std::vector<double> BSTest(double spot_,double strike_, double r_,double sigma_,
 }
 
 
+double BSCall(double spot, double strike, double r, double sigma, double T)
+{
+	std::mt19937_64 rand(30);
+
+	std::normal_distribution<double> norm(0.0, 1.0);
+
+	double rng;
+	double sum = 0;
+	int n = 100000;
+
+
+	for (int i = 0; i < n; i++)
+	{
+		rng = norm(rand);
+		sum = sum + fmax(spot * exp((r - 0.5 * sigma * sigma) * T + sigma * pow(T,0.5) * rng) - strike, 0.0);
+	}
+
+	return exp(-r * T) * sum / n;
+}
+
+
+
+
+
+
+
 std::vector<double> BSSim(double spot, double strike, double r, double sigma, double T, int N)
 {
 	std::vector<double> temp(5);

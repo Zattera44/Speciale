@@ -53,5 +53,8 @@
     <ClInclude Include="Number.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Blocklist.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
