@@ -1,5 +1,4 @@
 #include "Simulation.h"
-#include <random>
 
 std::vector<std::vector<double>> covMatrix(const double& H, const double& T, const int& n)
 {
@@ -91,7 +90,6 @@ std::vector<double> BSSim(double spot, double strike, double r, double sigma, do
 }
 
 
-
 std::vector<double> BSFormula(double spot_, double strike_, double r_, double sigma_, double T_)
 {
 	std::vector<double> result(5);
@@ -117,4 +115,81 @@ std::vector<double> BSFormula(double spot_, double strike_, double r_, double si
 	result[4] = T.adjoint();
 
 	return result;
+}
+
+
+
+std::vector<double> rBergomiCall(double H, double xi, double eta, double spot, double v0, double T, int numSteps)
+{
+	std::vector<double> res(5);
+	//Generer Z og Wtilde
+
+	//Alt herunder skal med i AAD
+		//Simuler V
+
+		//Simuler S
+
+
+
+		//Beregn payoff og greeks
+	return res;
+}
+
+
+
+std::vector < std::vector<double> > rBergomiCov(double H,double rho, double T, int numSteps)
+{
+	
+	std::vector<std::vector<double>> covMatrix(2*numSteps, std::vector<double>(2*numSteps,0));
+	double dt = (double)T / numSteps;
+
+
+	//Dan kovariansmatrix, evt. blok for blok
+
+	//Kovariansmatrix for Z
+	for (int i = 0; i < numSteps; i++)
+	{
+		for (int j = 0; j < numSteps; j++) 
+		{
+			covMatrix[i][j] = fmax(i * dt, j * dt);
+		}
+	}
+
+
+	//Kovariansmatrix for Wtilde
+	for (int i = numSteps; i < 2*numSteps; i++)
+	{
+		for (int j = numSteps; j < 2*numSteps; j++)
+		{
+			if (i < j)
+			{
+				covMatrix[i][j] = G(H - 0.5, 0.5*i * dt, 0.5*j * dt);
+			}
+			if (j > i)
+			{
+				covMatrix[i][j] = G(0.5 - H, 0.5*j * dt, 0.5*i * dt);
+			}
+			else
+			{
+				covMatrix[i][j] = pow(0.5*i * dt, 2 * H);
+			}
+		}
+	}
+
+	//øvre kovariansmatrix mellem Wtilde og Z
+
+	double Dh = sqrt(2 * H) / (H + 0.5);
+
+	for (int i = 0; i < numSteps; i++)
+	{
+		for (int j = numSteps; j < 2*numSteps; j++)
+		{
+
+		}
+	}
+
+
+
+
+	return covMatrix;
 }
