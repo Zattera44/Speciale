@@ -24,11 +24,10 @@ class rBergomi():
 
         # The grid changes slightly depending on which simulation scheme is used
         if hybrid:
-            self.t = np.linspace(0, T, 1 + self.s)
+            self.t = np.linspace(0, T, 1 + self.s)[np.newaxis,:]
         else:
             self.t = np.linspace(T/self.s,T,self.s)
 
-       
         self.H = H # Hurst index
 
         # To be consistent with notation in paper
@@ -46,8 +45,9 @@ class rBergomi():
             self.dW = self.__sim_dW()
             self.dZ = self.__sim_dZ()
 
-        # Simulate the Volterra paths used to simulate V   
-        self.paths = self.__sim_paths() 
+        # Simulate the Volterra paths used to simulate V  
+        if not hybrid: 
+            self.paths = self.__sim_paths() 
         self.volterra = self.__sim_volterra() 
 
     # Covariance matrix used in hybrid scheme
@@ -91,7 +91,6 @@ class rBergomi():
 
         # Matrix keeping track of which minimum time index in each entry
         index_matrix = np.reshape(np.minimum(v,u),(self.s,self.s))
-
 
         # Used to find E[WW], see Gatheral
         def G(H, x): 
