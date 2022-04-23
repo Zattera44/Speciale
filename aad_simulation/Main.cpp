@@ -2,35 +2,24 @@
 #include <random>
 #include <vector>
 
+
 #include "Utils.h"
 #include "Simulation.h"
-
-
 
 
 int main()
 {
 
+	double a, b, c, z;
 
-	double spot = 100;
-	double strike = 90;
-	double r = 0;
-	double sigma = 0.15;
-	double T = 1;
-	int N = 10000000;
+	a = 1;
+	b = 1;
+	c = 2;
+	z = 0.5;
 
+	double gamma = 0.4;
+	double x = 1.5;
 
-	std::vector<double> results(5);
-
-
-	//results = BSSim(spot, strike, r, sigma, T, N);
-
-	results = BSFormula(spot, strike, r, sigma, T);
-
-	for (int i = 0; i < results.size(); i++)
-	{
-		std::cout << results[i] << std::endl;
-	}
-
+	std::cout <<  G(gamma, 1,2) / (pow(2, 0.2) * pow(1, 0.2)) << std::endl;
 
 }

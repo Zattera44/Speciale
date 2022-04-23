@@ -196,3 +196,35 @@ double normPDF(double x)
 {
 	return 1 / (sqrt(2 * 3.14159265358979323846264338327)) * exp(-0.5 * x * x);
 }
+
+
+double hyperGeom(double a, double b, double c, double z)
+{
+	double S;
+	double tol;
+	double r;
+	double prev;
+	double prev2;
+	int j = 2;
+
+	tol = 0.00001;
+	S = 1 + ((a * b) / c) * z;
+	prev = 1;
+
+	do 
+	{
+		r = (a + j - 1) * (b + j - 1) / (j * (c + j - 1));
+		prev2 = S;
+		S = S + (S - prev) * r * z;
+		prev = prev2;
+		j++;
+	} while (fabs((S - prev2) / prev2) > tol);
+	return S;
+}
+
+
+
+double G(double gamma, double t, double u)
+{
+	return  -2 * (1 / 2 - gamma) * hyperGeom(1, gamma, 2 - gamma, t / u) / (pow(t, gamma - 1) * pow(u, gamma) * (gamma - 1));
+}
