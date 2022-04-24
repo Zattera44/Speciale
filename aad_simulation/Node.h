@@ -3,14 +3,14 @@
 #include <memory>
 #include "Utils.h"
 
-class Node
+class Node2
 {
 protected:
-	std::vector<Node*> myArguments;
+	std::vector<Node2*> myArguments;
 	double myAdjoint = 0.0;
 	double myResult;
 public:
-	 inline virtual ~Node() {}
+	 inline virtual ~Node2() {}
 	 inline virtual void propogateAdjoint() = 0;
 	 inline double& adjoint() {return myAdjoint;}
 	 void resetAdjoints();
@@ -19,88 +19,88 @@ public:
 
 
 
-class PlusNode : public Node
+class PlusNode2 : public Node2
 {
 
 public:
-	PlusNode(Node* lhs, Node* rhs);
+	PlusNode2(Node2* lhs, Node2* rhs);
 	void propogateAdjoint() override;
 };
 
 
-class MinusNode : public Node
+class MinusNode2 : public Node2
 {
 public:
-	MinusNode(Node* lhs, Node* rhs);
+	MinusNode2(Node2* lhs, Node2* rhs);
 	void propogateAdjoint() override;
 };
 
 
-class TimesNode : public Node
+class TimesNode2 : public Node2
 {
 public:
-	TimesNode(Node* lhs, Node* rhs);
+	TimesNode2(Node2* lhs, Node2* rhs);
 	void propogateAdjoint() override;
 };
 
-class LogNode : public Node
+class LogNode2 : public Node2
 {
 public:
-	LogNode(Node* arg);
-	void propogateAdjoint() override;
-};
-
-
-class ExpNode : public Node
-{
-public:
-	ExpNode(Node* arg);
+	LogNode2(Node2* arg);
 	void propogateAdjoint() override;
 };
 
 
-class SquareRootNode : public Node
+class ExpNode2 : public Node2
 {
 public:
-	SquareRootNode(Node* arg);
+	ExpNode2(Node2* arg);
+	void propogateAdjoint() override;
+};
+
+
+class SquareRootNode2 : public Node2
+{
+public:
+	SquareRootNode2(Node2* arg);
 	 void propogateAdjoint() override;
 };
 
 
-class SquareNode : public Node
+class SquareNode2 : public Node2
 {
 public:
-	SquareNode(Node* arg);
+	SquareNode2(Node2* arg);
 	 void propogateAdjoint() override;
 };
 
 
 
-class MaxNode : public Node
+class MaxNode2 : public Node2
 {
 public:
-	MaxNode(Node* lhs, Node* rhs);
+	MaxNode2(Node2* lhs, Node2* rhs);
 	void propogateAdjoint() override;
 };
 
 
-class NormCDFNode : public Node
+class NormCDFNode2 : public Node2
 {
 public:
-	NormCDFNode(Node* arg);
+	NormCDFNode2(Node2* arg);
 	void propogateAdjoint() override;
 };
 
 
-class DivisionNode : public Node
+class DivisionNode2 : public Node2
 {
 public:
-	DivisionNode(Node* lhs, Node* rhs);
+	DivisionNode2(Node2* lhs, Node2* rhs);
 	void propogateAdjoint() override;
 };
 
 
-class Leaf : public Node
+class Leaf : public Node2
 {
 public:
 	Leaf(double val);

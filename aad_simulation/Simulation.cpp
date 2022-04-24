@@ -1,4 +1,6 @@
 #include "Simulation.h"
+#include <iostream>
+
 
 std::vector<std::vector<double>> covMatrix(const double& H, const double& T, const int& n)
 {
@@ -30,19 +32,19 @@ std::vector<double> BSTest(double spot_,double strike_, double r_,double sigma_,
 	Number T(T_);
 
 
-	Number price(exp(-1*r*T) * max(spot * exp( (r - 0.5 * sigma*sigma ) * T + sigma * sqrt(T) * rand) - strike,0.0));
+	Number price(exp(-r*T) * max(spot * exp( (r - 0.5 * pow(sigma,2) ) * T + sigma * sqrt(T) * rand) - strike,0.0));
 
 
-	price.propogateAdjoints();
+	price.propagateToStart();
 
 
-	result[0] = price.getNode()->result();
+	result[0] = price.value();
 	result[1] = spot.adjoint();
 	result[2] = r.adjoint();
 	result[3] = sigma.adjoint();
 	result[4] = T.adjoint();	
 
-	sigma.resetTape();
+	Number::tape->rewind();
 
 	return result;
 }
@@ -56,16 +58,16 @@ double BSCall(double spot, double strike, double r, double sigma, double T)
 
 	double rng;
 	double sum = 0;
-	int n = 100000;
+	int n = 10000000;
 
 
 	for (int i = 0; i < n; i++)
 	{
 		rng = norm(rand);
-		sum = sum + fmax(spot * exp((r - 0.5 * sigma * sigma) * T + sigma * pow(T,0.5) * rng) - strike, 0.0);
+		sum = sum + exp(-r * T) * fmax(spot * exp((r - 0.5 * sigma * sigma) * T + sigma * pow(T,0.5) * rng) - strike, 0.0);
 	}
 
-	return exp(-r * T) * sum / n;
+	return sum / n;
 }
 
 
@@ -103,7 +105,6 @@ std::vector<double> BSSim(double spot, double strike, double r, double sigma, do
 		results[3] += temp[3];
 		results[4] += temp[4];
 
-
 	}
 
 	results[0] = (double) results[0] / N;
@@ -116,32 +117,90 @@ std::vector<double> BSSim(double spot, double strike, double r, double sigma, do
 }
 
 
-std::vector<double> BSFormula(double spot_, double strike_, double r_, double sigma_, double T_)
+
+
+std::vector<double> BSSim2(double spot_, double strike_, double r_, double sigma_, double T_, int N)
 {
-	std::vector<double> result(5);
-	
+	std::vector<double> temp(5);
+	std::vector<double> results(5);
+
+	results[0] = 0;
+	results[1] = 0;
+	results[2] = 0;
+	results[3] = 0;
+	results[4] = 0;
+
+	double random;
+
+	std::mt19937_64 rand(30);
+
+	std::normal_distribution<double> norm(0.0, 1.0);
+
 	Number spot(spot_);
 	Number strike(strike_);
 	Number r(r_);
 	Number sigma(sigma_);
 	Number T(T_);
 
+	Number mean((r - 0.5 * pow(sigma, 2)) * T);
+	Number disc(exp(-r * T));
+	Number sigmaT(sigma * sqrt(T));
 
-	Number d1((log(spot / strike) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrt(T)));
-	Number d2(d1 - sigma * sqrt(T));
 
-	Number price(spot * CDF(d1) - exp(-1 * r * T) * strike * CDF(d2));
+	Number::tape->mark();
 
-	price.propogateAdjoints();
+	for (int i = 0; i < N; i++)
+	{
+		random = norm(rand);
+		Number price (disc * max(spot * exp(mean + sigmaT * random) - strike, 0.0));
+		results[0] += price.value();
+		price.propagateToMark();
+		Number::tape->rewindToMark();
+		//std::cout << "Simulation number: " << i <<  std::endl;
+	}
 
-	result[0] = price.getNode()->result();
-	result[1] = spot.adjoint();
-	result[2] = sigma.adjoint();
-	result[3] = r.adjoint();
-	result[4] = T.adjoint();
+	Number::propagateMarkToStart();
 
-	return result;
+	results[0] = results[0] / N;
+	results[1] = spot.adjoint() / N;
+	results[2] = r.adjoint() / N;
+	results[3] = sigma.adjoint() / N;
+	results[4] = T.adjoint() / N;
+
+
+
+	return results;
 }
+
+
+
+
+//std::vector<double> BSFormula(double spot_, double strike_, double r_, double sigma_, double T_)
+//{
+//	std::vector<double> result(5);
+//	
+//	Number spot(spot_);
+//	Number strike(strike_);
+//	Number r(r_);
+//	Number sigma(sigma_);
+//	Number T(T_);
+//
+//
+//	Number d1((log(spot / strike) + (r + 0.5 * sigma * sigma) * T) / (sigma * sqrt(T)));
+//	Number d2(d1 - sigma * sqrt(T));
+//
+//	Number price(spot * CDF(d1) - exp(-1 * r * T) * strike * CDF(d2));
+//
+//	price.propogateAdjoints();
+//
+//	result[0] = price.getNode()->result();
+//	result[1] = spot.adjoint();
+//	result[2] = sigma.adjoint();
+//	result[3] = r.adjoint();
+//	result[4] = T.adjoint();
+//
+//	return result;
+//}
 
 
 

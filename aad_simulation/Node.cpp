@@ -2,7 +2,7 @@
 
 
 
-void Node:: resetAdjoints()
+void Node2:: resetAdjoints()
 {
 	for (auto argument : myArguments)
 	{
@@ -13,7 +13,7 @@ void Node:: resetAdjoints()
 
 
 
-double Node:: result()
+double Node2:: result()
 {
 	return myResult;
 }
@@ -21,9 +21,9 @@ double Node:: result()
 
 
 
-//PlusNode
+//PlusNode2
 
-PlusNode:: PlusNode(Node* lhs, Node* rhs)
+PlusNode2 :: PlusNode2(Node2* lhs, Node2* rhs)
 {
 	myArguments.resize(2);
 	myArguments[0] = lhs;
@@ -33,7 +33,7 @@ PlusNode:: PlusNode(Node* lhs, Node* rhs)
 }
 
 
-void  PlusNode::  propogateAdjoint()
+void  PlusNode2::  propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint;
 	myArguments[1]->adjoint() += myAdjoint;
@@ -41,10 +41,10 @@ void  PlusNode::  propogateAdjoint()
 
 
 
-//MinusNode
+//MinusNode2
 
 
-MinusNode::MinusNode(Node* lhs, Node* rhs)
+MinusNode2::MinusNode2(Node2* lhs, Node2* rhs)
 {
 	myArguments.resize(2);
 	myArguments[0] = lhs;
@@ -54,16 +54,16 @@ MinusNode::MinusNode(Node* lhs, Node* rhs)
 }
 
 
-void MinusNode:: propogateAdjoint()
+void MinusNode2:: propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint;
 	myArguments[1]->adjoint() -= myAdjoint;
 }
 
 
-//TimesNode
+//TimesNode2
 
-TimesNode:: TimesNode(Node* lhs, Node* rhs)
+TimesNode2:: TimesNode2(Node2* lhs, Node2* rhs)
 {
 	myArguments.resize(2);
 	myArguments[0] = lhs;
@@ -73,15 +73,15 @@ TimesNode:: TimesNode(Node* lhs, Node* rhs)
 }
 
 
-void TimesNode:: propogateAdjoint()
+void TimesNode2:: propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint * myArguments[1]->result();
 	myArguments[1]->adjoint() += myAdjoint * myArguments[0]->result();
 }
 
-//Log Node
+//Log Node2
 
-LogNode:: LogNode(Node* arg)
+LogNode2:: LogNode2(Node2* arg)
 {
 	myArguments.resize(1);
 	myArguments[0] = arg;
@@ -90,14 +90,14 @@ LogNode:: LogNode(Node* arg)
 }
 
 
-void LogNode:: propogateAdjoint()
+void LogNode2:: propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint / myArguments[0]->result();
 }
 
-//Exp Node
+//Exp Node2
 
-ExpNode::ExpNode(Node* arg)
+ExpNode2::ExpNode2(Node2* arg)
 {
 	myArguments.resize(1);
 	myArguments[0] = arg;
@@ -105,14 +105,14 @@ ExpNode::ExpNode(Node* arg)
 	myResult = exp(arg->result());
 }
 
-void ExpNode::propogateAdjoint()
+void ExpNode2::propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint * exp(myArguments[0]->result());
 }
 
-//SquareRoot Node
+//SquareRoot Node2
 
-SquareRootNode:: SquareRootNode(Node* arg)
+SquareRootNode2:: SquareRootNode2(Node2* arg)
 {
 	myArguments.resize(1);
 	myArguments[0] = arg;
@@ -120,14 +120,14 @@ SquareRootNode:: SquareRootNode(Node* arg)
 	myResult = sqrt(arg->result());
 }
 
-void SquareRootNode:: propogateAdjoint()
+void SquareRootNode2:: propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint / (2 * sqrt(myArguments[0]->result()));
 }
 
-//Square Node
+//Square Node2
 
-SquareNode:: SquareNode(Node* arg)
+SquareNode2:: SquareNode2(Node2* arg)
 {
 	myArguments.resize(1);
 	myArguments[0] = arg;
@@ -136,7 +136,7 @@ SquareNode:: SquareNode(Node* arg)
 }
 
 
-void SquareNode:: propogateAdjoint()
+void SquareNode2:: propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint * 2 * myArguments[0]->result();
 }
@@ -168,9 +168,9 @@ void Leaf:: evaluate()
 
 
 
-//Max Node
+//Max Node2
 
-MaxNode::MaxNode(Node* lhs, Node* rhs)
+MaxNode2::MaxNode2(Node2* lhs, Node2* rhs)
 {
 	myArguments.resize(2);
 	myArguments[0] = lhs;
@@ -179,7 +179,7 @@ MaxNode::MaxNode(Node* lhs, Node* rhs)
 	myResult = (lhs->result() >= rhs->result()) ? lhs->result() : rhs->result();
 }
 
-void MaxNode::propogateAdjoint()
+void MaxNode2::propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint * (myArguments[0]->result() >= myArguments[1]->result()) ? 1 : 0;
 	myArguments[1]->adjoint() += myAdjoint *  (myArguments[0]->result() < myArguments[1]->result()) ? 1 : 0;
@@ -187,7 +187,7 @@ void MaxNode::propogateAdjoint()
 
 
 
-NormCDFNode :: NormCDFNode(Node* arg)
+NormCDFNode2 :: NormCDFNode2(Node2* arg)
 {
 	myArguments.resize(1);
 	myArguments[0] = arg;
@@ -198,14 +198,14 @@ NormCDFNode :: NormCDFNode(Node* arg)
 
 
 
-void NormCDFNode:: propogateAdjoint()
+void NormCDFNode2:: propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint * normPDF(myArguments[0]->result());
 }
 
 
 
-DivisionNode :: DivisionNode(Node* lhs, Node* rhs)
+DivisionNode2 :: DivisionNode2(Node2* lhs, Node2* rhs)
 {
 	myArguments.resize(2);
 
@@ -217,7 +217,7 @@ DivisionNode :: DivisionNode(Node* lhs, Node* rhs)
 
 
 
-void DivisionNode::  propogateAdjoint()
+void DivisionNode2::  propogateAdjoint()
 {
 	myArguments[0]->adjoint() += myAdjoint / myArguments[1]->result();
 	myArguments[1]->adjoint() += -1 * myAdjoint * myArguments[0]->result() / pow(myArguments[1]->result(),2) ; 

@@ -1,12 +1,12 @@
 #pragma once
 #include "Node.h"
 
-class Number
+class Number2
 {
-	Node* myNode;
+	Node2* myNode;
 public:
 	//tape
-	static std::vector<std::unique_ptr<Node>> tape;
+	static std::vector<std::unique_ptr<Node2>> tape;
 
 
 	inline void resetTape()
@@ -14,14 +14,14 @@ public:
 		tape.clear();
 	}
 
-	inline Number(double val) : myNode(new Leaf(val))
+	inline Number2(double val) : myNode(new Leaf(val))
 	{
-		tape.push_back(std::unique_ptr<Node>(myNode));
+		tape.push_back(std::unique_ptr<Node2>(myNode));
 	}
 
-	inline Number(Node* node) : myNode(node) {}
+	inline Number2(Node2* node) : myNode(node) {}
 
-	Node* getNode();
+	Node2* getNode();
 	void setVal(double val);
 	double getVal();
 	double& adjoint();
@@ -35,15 +35,15 @@ public:
 
 
 
-Number operator+(Number lhs, Number rhs);
-Number operator-(Number lhs, Number rhs);
-Number operator*(Number lhs, Number rhs);
-Number operator/(Number lhs, Number rhs);
+Number2 operator+(Number2 lhs, Number2 rhs);
+Number2 operator-(Number2 lhs, Number2 rhs);
+Number2 operator*(Number2 lhs, Number2 rhs);
+Number2 operator/(Number2 lhs, Number2 rhs);
 
 
-Number log(Number arg);
-Number exp(Number arg);
-Number sqrt(Number arg);
-Number square(Number arg);
-Number max(Number lhs, Number rhs);
-Number CDF(Number arg);
+Number2 log(Number2 arg);
+Number2 exp(Number2 arg);
+Number2 sqrt(Number2 arg);
+Number2 square(Number2 arg);
+Number2 max(Number2 lhs, Number2 rhs);
+Number2 CDF(Number2 arg);

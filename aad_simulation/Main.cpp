@@ -1,10 +1,11 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <algorithm>
+
 
 #include "Utils.h"
 #include "Simulation.h"
-
 
 int main()
 {
@@ -13,17 +14,18 @@ int main()
 	double r = 0.03;
 	double T = 1;
 	double sigma = 0.2;
-	int N = 100000;
+	int N = 10000000;
 
 	std::vector<double> res;
 
 
 	auto start = std::chrono::steady_clock::now();
 
-	res = BSSim(spot, strike, r, sigma, T, N);
+	res = BSSim2(spot, strike, r, sigma, T, N);
 
 	auto end = std::chrono::steady_clock::now();
 
+	std::cout << "AAD" << std::endl;
 	std::cout << "Time spent: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()  << std::endl;
 
 	for (auto i : res)
@@ -48,6 +50,7 @@ int main()
 
 
 	std::cout << "Time spent: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
+
 
 
 }
