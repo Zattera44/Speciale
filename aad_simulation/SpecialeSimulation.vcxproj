@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AAD.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Node.cpp" />
@@ -147,6 +148,13 @@
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AAD.h" />
+    <ClInclude Include="AADExpr.h" />
+    <ClInclude Include="AADNode.h" />
+    <ClInclude Include="AADNumber.h" />
+    <ClInclude Include="AADTape.h" />
+    <ClInclude Include="Blocklist.h" />
+    <ClInclude Include="gaussians.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Number.h" />

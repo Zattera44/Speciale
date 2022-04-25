@@ -1,33 +1,33 @@
 #include "Number.h"
 
 
-Node*  Number::  getNode()
+Node2*  Number2::  getNode()
 {
 	return myNode;
 }
 
 
-void Number:: setVal(double val)
+void Number2:: setVal(double val)
 {
 	dynamic_cast<Leaf*>(myNode)->setVal(val);
 }
 
 
 
-double Number:: getVal()
+double Number2:: getVal()
 {
 	return dynamic_cast<Leaf*>(myNode)->getVal();
 }
 
 
 
-double& Number:: adjoint()
+double& Number2:: adjoint()
 {
 	return myNode->adjoint();
 }
 
 
-void Number:: propogateAdjoints()
+void Number2:: propogateAdjoints()
 {
 	myNode->resetAdjoints();
 	myNode->adjoint() = 1.0;
@@ -50,102 +50,102 @@ void Number:: propogateAdjoints()
 
 
 
-Number operator+(Number lhs, Number rhs)
+Number2 operator+(Number2 lhs, Number2 rhs)
 {
-	Node* n = new PlusNode(lhs.getNode(), rhs.getNode());
+	Node2* n = new PlusNode2(lhs.getNode(), rhs.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
 
-Number operator-(Number lhs, Number rhs)
+Number2 operator-(Number2 lhs, Number2 rhs)
 {
-	Node* n = new MinusNode(lhs.getNode(), rhs.getNode());
+	Node2* n = new MinusNode2(lhs.getNode(), rhs.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
-Number operator*(Number lhs, Number rhs)
+Number2 operator*(Number2 lhs, Number2 rhs)
 {
 
-	Node* n = new TimesNode(lhs.getNode(), rhs.getNode());
+	Node2* n = new TimesNode2(lhs.getNode(), rhs.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
-Number log(Number arg)
+Number2 log(Number2 arg)
 {
-	Node* n = new LogNode(arg.getNode());
+	Node2* n = new LogNode2(arg.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
-Number exp(Number arg)
+Number2 exp(Number2 arg)
 {
-	Node* n = new ExpNode(arg.getNode());
+	Node2* n = new ExpNode2(arg.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
-Number sqrt(Number arg)
+Number2 sqrt(Number2 arg)
 {
-	Node* n = new SquareRootNode(arg.getNode());
+	Node2* n = new SquareRootNode2(arg.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
-
-	return n;
-}
-
-
-Number square(Number arg)
-{
-	Node* n = new SquareNode(arg.getNode());
-
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
 
-Number max(Number lhs, Number rhs)
+Number2 square(Number2 arg)
 {
-	Node* n = new MaxNode(lhs.getNode(), rhs.getNode());
+	Node2* n = new SquareNode2(arg.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
 
-Number CDF(Number arg)
+Number2 max(Number2 lhs, Number2 rhs)
 {
-	Node* n = new NormCDFNode(arg.getNode());
+	Node2* n = new MaxNode2(lhs.getNode(), rhs.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
+
+	return n;
+}
+
+
+Number2 CDF(Number2 arg)
+{
+	Node2* n = new NormCDFNode2(arg.getNode());
+
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
 
 
-Number operator/(Number lhs, Number rhs)
+Number2 operator/(Number2 lhs, Number2 rhs)
 {
-	Node* n = new DivisionNode(lhs.getNode(), rhs.getNode());
+	Node2* n = new DivisionNode2(lhs.getNode(), rhs.getNode());
 
-	Number::tape.push_back(std::unique_ptr<Node>(n));
+	Number2::tape.push_back(std::unique_ptr<Node2>(n));
 
 	return n;
 }
 
 
-std::vector<std::unique_ptr<Node>> Number::tape;
+std::vector<std::unique_ptr<Node2>> Number2::tape;

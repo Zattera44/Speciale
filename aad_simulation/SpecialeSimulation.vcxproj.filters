@@ -33,6 +33,9 @@
     <ClCompile Include="Number.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AAD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Payoff.h">
@@ -51,6 +54,27 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Number.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Blocklist.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AADNode.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AADNumber.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AADTape.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gaussians.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AADExpr.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AAD.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
