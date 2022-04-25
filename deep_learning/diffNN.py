@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 class ForwardLayer(tf.keras.layers.Layer):
     def __init__(self, units, **kwargs):
@@ -49,16 +50,12 @@ class BackpropLayer(tf.keras.layers.Layer):
 
 
 def create_graph(layers=4, units=20):
-    forward_layers = {}
-    backprop_layers = {}
-    z = {}; zbar = {}
-
+    forward_layers, backprop_layers, z, zbar = {}, {}, {}, {}
     for l in range(layers):
         name = 'forward_{}'.format(l+1)
         new_layer = ForwardLayer(units=units, name=name)
         forward_layers[name] = new_layer
     forward_layers['output'] = ForwardLayer(units=1, name='output')
-
     l = 0
     for key in reversed(forward_layers):
         if key == 'forward_1':
@@ -72,34 +69,26 @@ def create_graph(layers=4, units=20):
 
     z['z_0'] = tf.keras.layers.Input(shape=(1,), name='input')
     old_name = 'z_0'
-
     l = 1
     for key in forward_layers:
         layer = forward_layers[key]
-
         if key == 'forward_1':
             first = True
         else:
             first = False
-
         if key =='output':
             y = layer(z[new_name])
-
         else:
             new_name = 'z_{}'.format(l)
             z[new_name] = layer(z[old_name], first=first)
             old_name = new_name
             l += 1
-
     l = layers
     for layer_key, z_key in zip(backprop_layers, reversed(z)):
         layer = backprop_layers[layer_key]
-
         if l == 0:
             derivs = layer(inputs = zbar[old_name], output=True)
-
         new_name = 'zbar_{}'.format(l)
-
         if layer_key == 'backprop_1':
             zbar[new_name] = layer(z[z_key], first = True)
             old_name = new_name
@@ -107,21 +96,17 @@ def create_graph(layers=4, units=20):
             zbar[new_name] = layer([z[z_key],zbar[old_name]])
             old_name = new_name
         l -= 1
-
     return tf.keras.Model(inputs=z['z_0'], outputs=[y,derivs])  
 
 def normalize_data(x_raw, y_raw, dydx_raw, epsilon = 1.0e-08):
-    
     x_mean = x_raw.mean(axis=0)
     x_std = x_raw.std(axis=0) + epsilon
     x = (x_raw- x_mean) / x_std
     y_mean = y_raw.mean(axis=0)
     y_std = y_raw.std(axis=0) + epsilon
     y = (y_raw-y_mean) / y_std
-    
     dydx = dydx_raw / y_std * x_std 
     lambda_j = 1.0 / np.sqrt((dydx ** 2).mean(axis=0)).reshape(1, -1)
-   
     return x_mean, x_std, x, y_mean, y_std, y, dydx, lambda_j 
 
 def create_derivsLoss(lambda_j):
@@ -154,5 +139,29 @@ class LRSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     if self.counter % self.number == 0:
         self.epoch += 1
     lr = np.interp(self.epoch / self.n_epochs, self.lr_schedule_epochs, self.lr_schedule_rates)
-
     return lr 
+
+# pinligt dårligt skrevet funktion, men det gør hvad den skal
+def plot_value_delta(xTest, yPred, yTest, dydxPred, dydxTest, size):
+    fig, ax = plt.subplots(1, 2, squeeze=False, dpi=90)
+    fig.set_size_inches(9.5, 4)
+    ax[0,0].plot(xTest*100,dydxPred, 'co', markersize=2, color='red', label='Predicted')
+    ax[0,0].plot(xTest*100,dydxTest, color='blue', label='Monte Carlo')
+    ax[0,1].plot(xTest*100,yPred*100, 'co', markersize=2, color='red', label='Predicted')
+    ax[0,1].plot(xTest*100,yTest*100, color='blue', label='Monte Carlo')
+    ax[0,0].set_ylabel("Delta")
+    ax[0,1].set_ylabel("Price")
+    ax[0,0].set_xlabel("Spot")
+    ax[0,1].set_xlabel("Spot")
+    errors = 100*(dydxPred - dydxTest)
+    rmse = np.sqrt((errors ** 2).mean(axis=0))
+    t = "RMSE = %.2f" % rmse
+    ax[0,0].set_title(t)
+    errors = 100*(yPred - yTest)
+    rmse = np.sqrt((errors ** 2).mean(axis=0)); rmse
+    t = "RMSE = %.2f" % rmse
+    ax[0,1].set_title(t)
+    t = "Size = %.0f" % size
+    plt.suptitle(t)
+    ax[0,0].legend()
+    plt.show()
