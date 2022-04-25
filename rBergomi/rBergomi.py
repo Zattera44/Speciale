@@ -1,16 +1,14 @@
 import numpy as np
 import scipy.special
-
 import jax.numpy as jnp
-import jax.scipy as jsp
 from jax import grad, value_and_grad
-
 from itertools import product
+from tqdm import tqdm_notebook
 
 class roughBergomi:
     def __init__(self, n_paths = 100000, n_steps = 52,
                     T = 1, H = 0.1, eta = 1, rho = -.3,
-                    xi = 0.235**2):
+                    xi = 0.235**2, spot = 1.0, strike = 1.0):
 
         # number of paths
         self.n_paths = n_paths
@@ -31,6 +29,10 @@ class roughBergomi:
         self.rho = rho
         self.xi = xi
 
+        self.spot = spot
+        self.strike = strike
+        self.spots = None
+
     def G(self, x): 
         F = scipy.special.hyp2f1(1.0,0.5-self.H,1.5+self.H,1.0/x)
         return (2*self.H*(x**(self.H-0.5))*scipy.special.gamma(0.5+self.H)*F)/scipy.special.gamma(self.H+1.5)
@@ -44,7 +46,7 @@ class roughBergomi:
         return np.reshape(np.minimum(v, u), (self.s, self.s))
 
     def covariance_matrix(self):
-        ZZ = self.idx_matrix
+        ZZ = self.idx_matrix()
         WW = np.zeros((self.s, self.s))
         WZ = np.zeros((self.s, self.s))
         D = np.sqrt(2.0*self.H)/(self.H+0.5)
@@ -66,10 +68,10 @@ class roughBergomi:
         return np.block([[WW, WZ],[WZ.T, ZZ]])
 
     def simulate_paths(self):
-        cov = self.covariance_matrix
+        cov = self.covariance_matrix()
         mean = np.zeros(self.s*2)
         paths = np.random.multivariate_normal(mean = mean, cov = cov, size = self.n_paths)
-        volterra, W = np.zeros((self.n_paths , self.s+1)), np.zeros((self.n_paths, s+1)) 
+        volterra, W = np.zeros((self.n_paths , self.s+1)), np.zeros((self.n_paths, self.s+1)) 
         volterra[:,0] = 0; volterra[:,1:] = paths[:,:self.s]
         W[:,0] = 0; W[:,1:] = paths[:,self.s:]
         dW = np.diff(W, axis = 1)
@@ -79,30 +81,68 @@ class roughBergomi:
         t = np.linspace(0, self.T, self.s+1)
         return self.xi * np.exp(self.eta * volterra - 0.5 * self.eta**2 * t**(2 * (self.H - 0.5) + 1))
 
-    def simulate_S(self, spot, V, dW):
-        t = np.linspace(0, self.T, self.s + 1)
+    def simulate_S(self, V, dW, spot=None):
+        if spot is None:
+            spot = self.spot
         increments = np.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
         integral = np.cumsum(increments, axis = 1)
         S = np.zeros_like(V)
         S[:,0] = spot
+        if isinstance(spot, np.ndarray):
+            spot = spot[:,None]
         S[:,1:] = spot * np.exp(integral)
+        return S
 
-    def call_price(self, strike, S):
-        last = S[:,self.s + 1]
+    def call_price(self, S, strike = None):
+        if strike is None:
+            strike = self.strike
+        last = S[:,self.s]
         itm = last[last-strike>0]
-        return np.sum(itm)/self.n_paths
+        return np.sum(itm-strike)/self.n_paths
 
-    def price_delta(self, spot, strike, V, dW):
+    def price_delta(self, V, dW, spot = None, strike = None):
+        if spot is None:
+            spot = self.spot
+        if strike is None:
+            strike = self.strike
         def price(spot):
             S = jnp.empty(shape=(self.n_paths, self.s+1))
             S = S.at[:,0].set(spot)
-
             for i in range(self.s):
                 inc = jnp.exp(jnp.sqrt(V[:,i]) * dW[:,i] - 0.5 * V[:,i] * self.dt)
                 S = S.at[:,i+1].set(S[:,i]*inc)
-
             return jnp.sum(jnp.where(S[:,i+1]-strike<0,0,S[:,i+1]-strike))/self.n_paths
-
         return value_and_grad(price, argnums=0)(spot)
 
+    # Training set
 
+    def initialize_spots(self, spot = None):
+        if spot is None:
+            spot = self.spot
+        lognorm = np.random.lognormal
+        spots = lognorm(mean=np.log(self.spot), sigma=0.2, size=self.n_paths)
+        self.spots = spots
+        return spots
+
+    def payoff_delta(self, V, dW, strike = None):
+        if strike is None:
+            strike = self.strike
+        def payoff(spot, V, dW):
+            increments = jnp.sqrt(V) * dW - 0.5 * V * self.dt
+            integral = jnp.sum(increments)
+            S = spot * jnp.exp(integral)
+            return jnp.max(jnp.array([S - strike, 0.0]))
+        if self.spots is None:
+            spots = self.initialize_spots()
+        else:
+            spots = self.spots
+        payoffs = []
+        deltas = []
+        for path in tqdm_notebook(range(self.n_paths)):
+            spot = spots[path]
+            v = V[path, :-1]
+            dw = dW[path,:]
+            p, d = value_and_grad(payoff,argnums=0)(spot, v, dw)
+            payoffs.append(p)
+            deltas.append(d)
+        return spots.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(deltas).reshape([-1,1])
