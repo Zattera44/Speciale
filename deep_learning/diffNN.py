@@ -48,7 +48,6 @@ class BackpropLayer(tf.keras.layers.Layer):
         if output and not first:
             return inputs @ tf.transpose(self.w)
 
-
 def create_graph(layers=4, units=20):
     forward_layers, backprop_layers, z, zbar = {}, {}, {}, {}
     for l in range(layers):
@@ -139,7 +138,23 @@ class LRSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     if self.counter % self.number == 0:
         self.epoch += 1
     lr = np.interp(self.epoch / self.n_epochs, self.lr_schedule_epochs, self.lr_schedule_rates)
-    return lr 
+
+    return lr  
+
+default_schedule = [(0.0, 1.0e-8), \
+                    (0.2, 0.1),    \
+                    (0.6, 0.01),   \
+                    (0.9, 1.0e-6), \
+                    (1.0, 1.0e-8)  ]
+
+def lr_scheduler(epoch, n_epochs, lr_schedule = default_schedule):
+    lr_schedule_epochs, lr_schedule_rates = zip(*lr_schedule)
+    return np.interp(epoch / n_epochs, lr_schedule_epochs, lr_schedule_rates)
+
+def differential_mse(y_batch, yhat_batch, dydx_batch, dydxhat_batch, lambd):
+    error = y_batch - yhat_batch
+    error_bar = dydx_batch - dydxhat_batch
+    return tf.reduce_mean(tf.square(error)) + lambd * tf.reduce_mean(tf.square(error_bar))
 
 # pinligt dårligt skrevet funktion, men det gør hvad den skal
 def plot_value_delta(xTest, yPred, yTest, dydxPred, dydxTest, size):

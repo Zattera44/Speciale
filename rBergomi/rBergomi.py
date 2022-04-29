@@ -126,9 +126,20 @@ class roughBergomi:
             integral = jnp.sum(increments, axis = 1)
             S = jnp.empty(shape=(self.n_paths, 1))
             S = spot * jnp.exp(integral)
-            #return jnp.sum(jnp.where(S-strike<0,0,S-strike))/self.n_paths
-            #return jnp.mean(jax.lax.max(S-strike,0.0))
             return jnp.sum(jax.lax.max(S-strike,0.0))/self.n_paths
+        return value_and_grad(price, argnums=0)(spot)
+
+    def asian(self, V, dW, spot = None, strike = None):
+        if spot is None:
+            spot = self.spot
+        if strike is None:
+            strike = self.strike
+        def price(spot):
+            increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
+            integral = jnp.cumsum(increments, axis = 1)
+            S = jnp.empty(shape=(self.n_paths, 1))
+            S = spot * jnp.exp(integral)
+            return jnp.sum(jax.lax.max(jnp.mean(S, axis=1)-strike,0.0))/self.n_paths
         return value_and_grad(price, argnums=0)(spot)
 
     # Training set
@@ -163,6 +174,28 @@ class roughBergomi:
             deltas.append(d)
         return spots.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(deltas).reshape([-1,1])
 
+    def asian_payoff(self, V, dW, strike = None):
+        if strike is None:
+            strike = self.strike
+        def payoff(spot, V, dW):
+            increments = jnp.sqrt(V) * dW - 0.5 * V * self.dt
+            integral = jnp.cumsum(increments)
+            S = spot * jnp.exp(integral)
+            return jnp.max(jnp.array([jnp.mean(S) - strike, 0.0]))
+        if self.spots is None:
+            spots = self.initialize_spots()
+        else:
+            spots = self.spots
+        payoffs, deltas = [], []
+        for path in tqdm_notebook(range(self.n_paths), desc='Simulating training set'):
+            spot = spots[path]
+            v = V[path, :-1]
+            dw = dW[path,:]
+            p, d = value_and_grad(payoff,argnums=0)(spot, v, dw)
+            payoffs.append(p)
+            deltas.append(d)
+        return spots.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(deltas).reshape([-1,1])
+
     def test(self, V, dW, upper=0.35, lower=1.65, n=100, n_paths = None):
         if n_paths is not None:
             n_paths_orginial = self.n_paths
@@ -173,6 +206,23 @@ class roughBergomi:
         yTest, dydxTest = [], []
         for spot in tqdm_notebook(xTest, desc='Simulating test set'):
             y, dydx = self.price_delta(V, dW, spot=spot)
+            yTest.append(y)
+            dydxTest.append(dydx)
+        if n_paths is not None:
+            self.n_paths = n_paths_orginial
+        return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))
+
+
+    def asian_test(self, V, dW, upper=0.35, lower=1.65, n=100, n_paths = None):
+        if n_paths is not None:
+            n_paths_orginial = self.n_paths
+            self.n_paths = n_paths
+            volterra, W, dW = self.simulate_paths()
+            V = self.simulate_V(volterra)
+        xTest = np.linspace(lower, upper, n).reshape((-1, 1))
+        yTest, dydxTest = [], []
+        for spot in tqdm_notebook(xTest, desc='Simulating test set'):
+            y, dydx = self.asian(V, dW, spot=spot)
             yTest.append(y)
             dydxTest.append(dydx)
         if n_paths is not None:
