@@ -160,10 +160,10 @@ def differential_mse(y_batch, yhat_batch, dydx_batch, dydxhat_batch, lambd):
 def plot_value_delta(xTest, yPred, yTest, dydxPred, dydxTest, size):
     fig, ax = plt.subplots(1, 2, squeeze=False, dpi=90)
     fig.set_size_inches(9.5, 4)
-    ax[0,0].plot(xTest*100,dydxPred, 'co', markersize=2, color='red', label='Predicted')
-    ax[0,0].plot(xTest*100,dydxTest, color='blue', label='Monte Carlo')
-    ax[0,1].plot(xTest*100,yPred*100, 'co', markersize=2, color='red', label='Predicted')
-    ax[0,1].plot(xTest*100,yTest*100, color='blue', label='Monte Carlo')
+    ax[0,0].plot(xTest,dydxPred, 'co', markersize=2, color='red', label='Predicted')
+    ax[0,0].plot(xTest,dydxTest, color='blue', label='Monte Carlo')
+    ax[0,1].plot(xTest,yPred, 'co', markersize=2, color='red', label='Predicted')
+    ax[0,1].plot(xTest,yTest, color='blue', label='Monte Carlo')
     ax[0,0].set_ylabel("Delta")
     ax[0,1].set_ylabel("Price")
     ax[0,0].set_xlabel("Spot")
@@ -172,7 +172,7 @@ def plot_value_delta(xTest, yPred, yTest, dydxPred, dydxTest, size):
     rmse = np.sqrt((errors ** 2).mean(axis=0))
     t = "RMSE = %.2f" % rmse
     ax[0,0].set_title(t)
-    errors = 100*(yPred - yTest)
+    errors = (yPred - yTest)
     rmse = np.sqrt((errors ** 2).mean(axis=0)); rmse
     t = "RMSE = %.2f" % rmse
     ax[0,1].set_title(t)

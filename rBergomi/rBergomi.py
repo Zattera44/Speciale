@@ -5,6 +5,7 @@ from jax import grad, value_and_grad
 import jax
 from itertools import product
 from tqdm import tqdm_notebook
+import random
 
 class roughBergomi:
     def __init__(self, n_paths = 100000, n_steps = 52,
@@ -62,7 +63,7 @@ class roughBergomi:
                     WW[i,j] = u**(2.0*self.H)*self.G(x)
                 if i < j:
                     WW[i,j] = 0
-                WZ[i,j] = D * (v**(self.H+0.5)-(v-np.minimum(u,v))**(self.H+0.5))
+                WZ[i,j] = self.rho * D * (v**(self.H+0.5)-(v-np.minimum(u,v))**(self.H+0.5))
                 j += 1
             i += 1
         WW = WW + WW.T - np.diag(WW.diagonal())
@@ -124,7 +125,6 @@ class roughBergomi:
         def price(spot):
             increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
             integral = jnp.sum(increments, axis = 1)
-            S = jnp.empty(shape=(self.n_paths, 1))
             S = spot * jnp.exp(integral)
             return jnp.sum(jax.lax.max(S-strike,0.0))/self.n_paths
         return value_and_grad(price, argnums=0)(spot)
@@ -137,12 +137,23 @@ class roughBergomi:
         def price(spot):
             increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
             integral = jnp.cumsum(increments, axis = 1)
-            S = jnp.empty(shape=(self.n_paths, 1))
-            S = spot * jnp.exp(integral)
+            S = jnp.empty(shape=(self.n_paths, self.s+1))
+            S = S.at[:,0].set(spot)
+            S = S.at[:,1:].set(spot * jnp.exp(integral))
             return jnp.sum(jax.lax.max(jnp.mean(S, axis=1)-strike,0.0))/self.n_paths
         return value_and_grad(price, argnums=0)(spot)
 
-    # Training set
+    def cliquet(self, V, dW, floor=-0.1, cap=0.1, min = 0, spot = 1.0):
+        if spot is None:
+            spot = self.spot
+        def price(min):
+            increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
+            integral = jnp.cumsum(increments, axis = 1)
+            S = jnp.empty(shape=(self.n_paths, self.s+1))
+            S = S.at[:,0].set(spot)
+            S = S.at[:,1:].set(spot * jnp.exp(integral))
+            return jnp.mean(jnp.maximum(jnp.sum(jnp.minimum(jnp.maximum((S[:,1:] / S[:,:-1]) - 1, floor), cap), axis=1), min))
+        return value_and_grad(price, argnums=0)(min)
 
     def initialize_spots(self, vol=0.3, spot=None):
         if spot is None:
@@ -180,7 +191,9 @@ class roughBergomi:
         def payoff(spot, V, dW):
             increments = jnp.sqrt(V) * dW - 0.5 * V * self.dt
             integral = jnp.cumsum(increments)
-            S = spot * jnp.exp(integral)
+            S = jnp.empty(shape=(1, self.s+1))
+            S = S.at[:,0].set(spot)
+            S = S.at[:,1:].set(spot * jnp.exp(integral))
             return jnp.max(jnp.array([jnp.mean(S) - strike, 0.0]))
         if self.spots is None:
             spots = self.initialize_spots()
@@ -196,7 +209,26 @@ class roughBergomi:
             deltas.append(d)
         return spots.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(deltas).reshape([-1,1])
 
-    def test(self, V, dW, upper=0.35, lower=1.65, n=100, n_paths = None):
+    def cliquet_payoff(self, V, dW, floor=-0.1, cap=0.1, minmin=0, minmax=0.15, spot=1.0):
+        def payoff(min, V, dW):
+            increments = jnp.sqrt(V) * dW - 0.5 * V * self.dt
+            integral = jnp.cumsum(increments)
+            S = jnp.empty(shape=(1, self.s+1))
+            S = S.at[:,0].set(spot)
+            S = S.at[:,1:].set(spot * jnp.exp(integral))
+            return jnp.mean(jnp.maximum(jnp.sum(jnp.minimum(jnp.maximum((S[:,1:] / S[:,:-1]) - 1, floor), cap), axis=1), min))
+        mins = np.random.uniform(minmin, minmax, size=self.n_paths)
+        payoffs, deltas = [], []
+        for path in tqdm_notebook(range(self.n_paths), desc='Simulating training set'):
+            min = mins[path]
+            v = V[path, :-1]
+            dw = dW[path,:]
+            p, d = value_and_grad(payoff,argnums=0)(min, v, dw)
+            payoffs.append(p)
+            deltas.append(d)
+        return mins.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(deltas).reshape([-1,1])
+
+    def test(self, V, dW, lower=0.35, upper=1.65, n=100, n_paths = None):
         if n_paths is not None:
             n_paths_orginial = self.n_paths
             self.n_paths = n_paths
@@ -212,8 +244,7 @@ class roughBergomi:
             self.n_paths = n_paths_orginial
         return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))
 
-
-    def asian_test(self, V, dW, upper=0.35, lower=1.65, n=100, n_paths = None):
+    def asian_test(self, V, dW, lower=0.35, upper=1.65, n=100, n_paths = None):
         if n_paths is not None:
             n_paths_orginial = self.n_paths
             self.n_paths = n_paths
@@ -228,6 +259,19 @@ class roughBergomi:
         if n_paths is not None:
             self.n_paths = n_paths_orginial
         return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))
-        
 
-
+    def cliquet_test(self, V, dW, floor = -0.15, cap = 0.15, lower=0.0, upper=0.1, n=100, n_paths = None):
+        if n_paths is not None:
+            n_paths_orginial = self.n_paths
+            self.n_paths = n_paths
+            volterra, W, dW = self.simulate_paths()
+            V = self.simulate_V(volterra)
+        xTest = np.linspace(lower, upper, n).reshape((-1, 1))
+        yTest, dydxTest = [], []
+        for min in tqdm_notebook(xTest, desc='Simulating test set'):
+            y, dydx = self.cliquet(V, dW, floor=floor, cap=cap, min = min, spot=self.spot)
+            yTest.append(y)
+            dydxTest.append(dydx)
+        if n_paths is not None:
+            self.n_paths = n_paths_orginial
+        return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))

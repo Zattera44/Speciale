@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import norm
+from scipy.optimize import brentq
 
 ### From https://github.com/differential-machine-learning/notebooks/blob/master/DifferentialMLTF2.ipynb
 
@@ -7,6 +8,12 @@ def bsPrice(spot, strike, vol, T):
     d1 = (np.log(spot/strike) + 0.5 * vol * vol * T) / vol / np.sqrt(T)
     d2 = d1 - vol * np.sqrt(T)
     return spot * norm.cdf(d1) - strike * norm.cdf(d2)
+
+def bsImpVol(P, spot, strike, T):
+    def error(s):
+        return bsPrice(spot, strike, s, T) - P
+    return brentq(error, 1e-16, 1)
+    
 
 def bsDelta(spot, strike, vol, T):
     d1 = (np.log(spot/strike) + 0.5 * vol * vol * T) / vol / np.sqrt(T)
