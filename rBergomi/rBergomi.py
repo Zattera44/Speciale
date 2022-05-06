@@ -81,7 +81,7 @@ class roughBergomi:
 
     def simulate_V(self, volterra):
         t = np.linspace(0, self.T, self.s+1)
-        return self.xi * np.exp(self.eta * volterra - 0.5 * self.eta**2 * t**(2 * (self.H - 0.5) + 1))
+        return self.xi * np.exp(self.eta * volterra - 0.5 * self.eta**2 * t**(2 * self.H))
 
     def simulate_S(self, V, dW, spot=None):
         if spot is None:
@@ -228,6 +228,20 @@ class roughBergomi:
             deltas.append(d)
         return mins.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(deltas).reshape([-1,1])
 
+    def cliquet_eta(self, dW, volterra, spot = 1.0, eta=1.0):
+        if spot is None:
+            spot = self.spot
+        def price(eta):
+            t = np.linspace(0, self.T, self.s+1)
+            V = self.xi * jnp.exp(eta * volterra - 0.5 * eta**2 * t**(2 * self.H))
+            increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
+            integral = jnp.cumsum(increments, axis = 1)
+            S = jnp.empty(shape=(self.n_paths, self.s+1))
+            S = S.at[:,0].set(spot)
+            S = S.at[:,1:].set(spot * jnp.exp(integral))
+            return jnp.mean(jnp.sum(jnp.maximum((S[:,1:] / S[:,:-1]) - 1, 0), axis=1))
+        return value_and_grad(price, argnums=0)(eta)
+
     def test(self, V, dW, lower=0.35, upper=1.65, n=100, n_paths = None):
         if n_paths is not None:
             n_paths_orginial = self.n_paths
@@ -270,6 +284,22 @@ class roughBergomi:
         yTest, dydxTest = [], []
         for min in tqdm_notebook(xTest, desc='Simulating test set'):
             y, dydx = self.cliquet(V, dW, floor=floor, cap=cap, min = min, spot=self.spot)
+            yTest.append(y)
+            dydxTest.append(dydx)
+        if n_paths is not None:
+            self.n_paths = n_paths_orginial
+        return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))
+
+    def cliquet_eta_test(self, dW, volterra, lower=0.5, upper=2, n=100, n_paths = None):
+        if n_paths is not None:
+            n_paths_orginial = self.n_paths
+            self.n_paths = n_paths
+            volterra, W, dW = self.simulate_paths()
+            V = self.simulate_V(volterra)
+        xTest = np.linspace(lower, upper, n).reshape((-1, 1))
+        yTest, dydxTest = [], []
+        for e in tqdm_notebook(xTest, desc='Simulating test set'):
+            y, dydx = self.cliquet_eta(dW, volterra, spot=self.spot, eta=e)
             yTest.append(y)
             dydxTest.append(dydx)
         if n_paths is not None:

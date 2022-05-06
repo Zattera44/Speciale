@@ -10,9 +10,10 @@ def bsPrice(spot, strike, vol, T):
     return spot * norm.cdf(d1) - strike * norm.cdf(d2)
 
 def bsImpVol(P, spot, strike, T):
+    P = np.maximum(P, np.maximum(spot - strike, 0))
     def error(s):
         return bsPrice(spot, strike, s, T) - P
-    return brentq(error, 1e-16, 1)
+    return brentq(error, 1e-9, 1e+9)
     
 
 def bsDelta(spot, strike, vol, T):
