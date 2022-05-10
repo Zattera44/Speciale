@@ -1,10 +1,9 @@
 import numpy as np
-import numpy.random
 import scipy.special
-
+from scipy.stats import norm
+from scipy.optimize import brentq
 import jax.numpy as jnp
-from jax import grad, value_and_grad
-
+from jax import value_and_grad
 from itertools import product
 from tqdm import tqdm_notebook
 
@@ -60,7 +59,7 @@ class roughBergomi:
 
                 if i > j:
                     x = v/u
-                    WW[i,j] = u**(2.0*H)*self.G(x)
+                    WW[i,j] = u**(2.0*H)*self.G(x, H)
 
                 if i < j:
                     WW[i,j] = 0
@@ -120,6 +119,11 @@ class roughBergomi:
 
         return S
 
+    def callPrice(self, S, strike = 1.0):
+        last = S[:,self.s]
+        itm = last[last-strike>0]
+        return np.sum(itm-strike)/self.n_paths
+
     def priceDeriv(self
             ,dW
             ,volterra
@@ -175,19 +179,19 @@ class roughBergomi:
             ,xi = 0.235**2
             ,eta = 1
             ,payoff = 'European'
-            ,deriv=0):
+            ,deriv = 0):
 
-        def payoff(spot, xi, volterra, dW):
+        def pathwise_payoff(spot, xi, volterra, dW, payoff):
 
             t = np.linspace(0, self.T, self.s+1)
             V = xi * jnp.exp(eta * volterra - 0.5 * eta**2 * t**(2 * self.H))
 
             if payoff != 'European':
 
-                increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
-                integral = jnp.cumsum(increments, axis = 1)
+                increments = jnp.sqrt(V[:-1]) * dW - 0.5 * V[:-1] * self.dt
+                integral = jnp.cumsum(increments)
 
-                S = jnp.empty(shape=(self.n_paths, self.s+1))
+                S = jnp.empty(shape=(1, self.s+1))
                 S = S.at[:,0].set(spot)
                 S = S.at[:,1:].set(spot * jnp.exp(integral))
 
@@ -195,12 +199,12 @@ class roughBergomi:
                     return jnp.mean(jnp.maximum(jnp.mean(S, axis=1) - strike, 0.0))
 
                 if payoff == 'Cliquet':
-                    return jnp.mean(jnp.sum(jnp.maximum((S[:,1:] / S[:,:-1]) - 1, 0), axis=1))
+                    return jnp.mean(jnp.sum(jnp.maximum((S[:,1:] / S[:,:-1]) - 1, 0)))
 
             else:
 
-                increments = jnp.sqrt(V[:,:-1]) * dW - 0.5 * V[:,:-1] * self.dt
-                integral = jnp.sum(increments, axis = 1)
+                increments = jnp.sqrt(V[:-1]) * dW - 0.5 * V[:-1] * self.dt
+                integral = jnp.sum(increments)
                 S = spot * jnp.exp(integral)
 
                 return jnp.mean(jnp.maximum(S - strike, 0.0))
@@ -211,24 +215,56 @@ class roughBergomi:
             x = spots
         if deriv == 1: 
             spots = np.repeat(spot, self.n_paths)
-            xis = round(np.random.uniform(low=0.01, high=0.6, size=self.n_paths))
+            xis = np.random.uniform(low=0.01, high=0.15, size=self.n_paths)
             x = xis
        
         payoffs, derivs = [], []
         for path in tqdm_notebook(range(self.n_paths), desc='Simulating training set'):
-            p, d = value_and_grad(payoff,argnums=deriv)(spots[path], xis[path], volterra[path, :], dW[path,:])
+            p, d = value_and_grad(pathwise_payoff,argnums=deriv)(spots[path], xis[path], volterra[path, :], dW[path,:], payoff)
             payoffs.append(p)
             derivs.append(d)
 
         return x.reshape([-1,1]), np.array(payoffs).reshape([-1,1]), np.array(derivs).reshape([-1,1])
 
-    def test(self, V, dW, lower=0.35, upper=1.65, n=100):
-        xTest = np.linspace(lower, upper, n).reshape((-1, 1))
+    def testSet(self
+            ,dW
+            ,volterra
+            ,lower = 0.35
+            ,upper = 1.65
+            ,n = 100
+            ,spot = 1.0
+            ,strike = 1.0
+            ,xi = 0.235**2
+            ,eta = 1
+            ,payoff = 'European'
+            ,deriv = 0):
+
+        if payoff != 'Cliquet':
+            spots = np.linspace(lower, upper, n).reshape((-1, 1))
+            xTest = spots
+            xis = np.repeat(xi, n)
+        else:
+            xis = np.linspace(lower, upper, n).reshape((-1, 1))
+            xTest = xis
+            spots = np.repeat(spot, n)
+
         yTest, dydxTest = [], []
-        for spot in tqdm_notebook(xTest, desc='Simulating test set'):
-            y, dydx = self.price_delta(V, dW, spot=spot)
+        for i in tqdm_notebook(range(n), desc='Simulating test set'):
+            y, dydx = self.priceDeriv(dW, volterra
+                                    ,spot = spots[i], strike = strike
+                                    ,xi = xis[i], eta = eta
+                                    ,payoff = payoff, deriv = deriv)
             yTest.append(y)
             dydxTest.append(dydx)
-        return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))
+        return xTest, np.array(yTest).reshape((-1, 1)), np.array(dydxTest).reshape((-1, 1))    
 
-    
+def bsPrice(spot, strike, vol, T):
+    d1 = (np.log(spot/strike) + 0.5 * vol * vol * T) / vol / np.sqrt(T)
+    d2 = d1 - vol * np.sqrt(T)
+    return spot * norm.cdf(d1) - strike * norm.cdf(d2)
+
+def bsImpVol(P, spot, strike, T):
+    P = np.maximum(P, np.maximum(spot - strike, 0))
+    def error(s):
+        return bsPrice(spot, strike, s, T) - P
+    return brentq(error, 1e-9, 1e+9)

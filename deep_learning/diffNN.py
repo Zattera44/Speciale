@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
 
 class ForwardLayer(tf.keras.layers.Layer):
     def __init__(self, units, **kwargs):
@@ -48,7 +47,7 @@ class BackpropLayer(tf.keras.layers.Layer):
         if output and not first:
             return inputs @ tf.transpose(self.w)
 
-def create_graph(layers=4, units=20):
+def create_graph(layers=4, units=20, input_dim=1):
     forward_layers, backprop_layers, z, zbar = {}, {}, {}, {}
     for l in range(layers):
         name = 'forward_{}'.format(l+1)
@@ -66,7 +65,7 @@ def create_graph(layers=4, units=20):
             l += 1
     backprop_layers['derivs'] = BackpropLayer(twin = forward_layers[key], name='derivs')
 
-    z['z_0'] = tf.keras.layers.Input(shape=(1,), name='input')
+    z['z_0'] = tf.keras.layers.Input(shape=(input_dim,), name='input')
     old_name = 'z_0'
     l = 1
     for key in forward_layers:
@@ -155,28 +154,3 @@ def differential_mse(y_batch, yhat_batch, dydx_batch, dydxhat_batch, lambd):
     error = y_batch - yhat_batch
     error_bar = dydx_batch - dydxhat_batch
     return tf.reduce_mean(tf.square(error)) + lambd * tf.reduce_mean(tf.square(error_bar))
-
-# pinligt dårligt skrevet funktion, men det gør hvad den skal
-def plot_value_delta(xTest, yPred, yTest, dydxPred, dydxTest, size):
-    fig, ax = plt.subplots(1, 2, squeeze=False, dpi=90)
-    fig.set_size_inches(9.5, 4)
-    ax[0,0].plot(xTest,dydxPred, 'co', markersize=2, color='red', label='Predicted')
-    ax[0,0].plot(xTest,dydxTest, color='blue', label='Monte Carlo')
-    ax[0,1].plot(xTest,yPred, 'co', markersize=2, color='red', label='Predicted')
-    ax[0,1].plot(xTest,yTest, color='blue', label='Monte Carlo')
-    ax[0,0].set_ylabel("Delta")
-    ax[0,1].set_ylabel("Price")
-    ax[0,0].set_xlabel("Spot")
-    ax[0,1].set_xlabel("Spot")
-    errors = 100*(dydxPred - dydxTest)
-    rmse = np.sqrt((errors ** 2).mean(axis=0))
-    t = "RMSE = %.2f" % rmse
-    ax[0,0].set_title(t)
-    errors = (yPred - yTest)
-    rmse = np.sqrt((errors ** 2).mean(axis=0)); rmse
-    t = "RMSE = %.2f" % rmse
-    ax[0,1].set_title(t)
-    t = "Size = %.0f" % size
-    plt.suptitle(t)
-    ax[0,0].legend()
-    plt.show()

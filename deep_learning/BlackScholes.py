@@ -2,7 +2,9 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import brentq
 
-### From https://github.com/differential-machine-learning/notebooks/blob/master/DifferentialMLTF2.ipynb
+### Most of the code is from ###
+# https://github.com/differential-machine-learning/notebooks/blob/master/DifferentialMLTF2.ipynb
+# Adjustments have been made in order to augment the training set with sigma
 
 def bsPrice(spot, strike, vol, T):
     d1 = (np.log(spot/strike) + 0.5 * vol * vol * T) / vol / np.sqrt(T)
@@ -15,7 +17,6 @@ def bsImpVol(P, spot, strike, T):
         return bsPrice(spot, strike, s, T) - P
     return brentq(error, 1e-9, 1e+9)
     
-
 def bsDelta(spot, strike, vol, T):
     d1 = (np.log(spot/strike) + 0.5 * vol * vol * T) / vol / np.sqrt(T)
     return norm.cdf(d1)
@@ -46,14 +47,15 @@ class BlackScholes:
 
         vol0 = self.vol * self.volMult
         R1 = np.exp(-0.5*vol0*vol0*self.T1 + vol0*np.sqrt(self.T1)*returns[:,0])
-        R2 = np.exp(-0.5*self.vol*self.vol*(self.T2-self.T1) \
-                    + self.vol*np.sqrt(self.T2-self.T1)*returns[:,1])
+        sigma = abs(np.random.normal(scale=0.15,size=m)) #np.random.uniform(0.05, 0.5, m)
+        R2 = np.exp(-0.5*sigma**2*(self.T2-self.T1) \
+                    + sigma*np.sqrt(self.T2-self.T1)*returns[:,1])
         S1 = self.spot * R1
         S2 = S1 * R2 
 
         pay = np.maximum(0, S2 - self.K)
-        R2a = np.exp(-0.5*self.vol*self.vol*(self.T2-self.T1) \
-                    - self.vol*np.sqrt(self.T2-self.T1)*returns[:,1])
+        R2a = np.exp(-0.5*sigma**2*(self.T2-self.T1) \
+                    - sigma*np.sqrt(self.T2-self.T1)*returns[:,1])
         S2a = S1 * R2a             
         paya = np.maximum(0, S2a - self.K)
         
@@ -63,8 +65,11 @@ class BlackScholes:
         Z1 =  np.where(S2 > self.K, R2, 0.0).reshape((-1,1)) 
         Z2 =  np.where(S2a > self.K, R2a, 0.0).reshape((-1,1)) 
         Z = 0.5 * (Z1 + Z2)
-        
-        return X.reshape([-1,1]), Y.reshape([-1,1]), Z.reshape([-1,1])
+        V1 = np.where(S2 > self.K, S2*(-sigma*(self.T2-self.T1)+np.sqrt(self.T2-self.T1)*returns[:,1]), 0.0).reshape((-1,1))
+        V2 = np.where(S2a > self.K, S2a*(-sigma*(self.T2-self.T1)+np.sqrt(self.T2-self.T1)*(-returns[:,1])), 0.0).reshape((-1,1))
+        V = 0.5 * (V1 + V2)
+
+        return X.reshape([-1,1]), sigma.reshape([-1,1]), Y.reshape([-1,1]), Z.reshape([-1,1]), V.reshape([-1,1])
     
     def testSet(self, lower=0.35, upper=1.65, num=100):
         
